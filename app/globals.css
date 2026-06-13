@@ -1,0 +1,345 @@
+/* app/globals.css */
+@import "tailwindcss";
+
+/* Custom CSS */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Class-based dark mode */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Custom scrollbar for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+/* Smooth transitions for sidebar */
+.sidebar-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Prevent horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* Ensure dark mode works with Tailwind v4 */
+@layer base {
+  :root {
+    --color-background: #ffffff;
+    --color-foreground: #171717;
+  }
+
+  .dark {
+    --color-background: #0a0a0a;
+    --color-foreground: #ededed;
+  }
+
+  
+  
+
+ 
+  
+
+  /* Ensure proper stacking context */
+  nav {
+    z-index: 50 !important;
+  }
+
+  .trailer-popup {
+    z-index: 9999 !important;
+  }
+
+  .hero-section {
+    position: relative;
+    z-index: 0;
+  }
+  
+  
+
+  /* Improve image rendering */
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Prevent blur on scale */
+  .group:hover img {
+    filter: none !important;
+  }
+
+  /* Better backdrop image quality */
+  .bg-backdrop {
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  @keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0.9;
+  }
+  }
+  
+  .animate-pulse-subtle {
+    animation: pulse-subtle 1.5s ease-in-out infinite;
+  }
+  /* Add to your global.css */
+  .z-100 {
+    z-index: 100;
+  }
+  .z-101 {
+    z-index: 101;
+  }
+  /* Add to globals.css or your main CSS file */
+  .notification-dropdown-desktop {
+    position: absolute !important;
+    right: 0 !important;
+    top: 100% !important;
+    margin-top: 0.5rem !important;
+    z-index: 1000 !important;
+  }
+
+  .notification-dropdown-mobile {
+    position: fixed !important;
+    top: 4rem !important;
+    right: 1rem !important;
+    z-index: 1000 !important;
+  }
+
+
+  /* Add to your global CSS */
+  @keyframes ring {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(-10deg); }
+    20% { transform: rotate(10deg); }
+    30% { transform: rotate(-10deg); }
+    40% { transform: rotate(10deg); }
+    50% { transform: rotate(-5deg); }
+    60% { transform: rotate(5deg); }
+    70% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  .animate-ring {
+    animation: ring 1s ease-in-out;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-slideInRight {
+    animation: slideInRight 0.3s ease-out;
+  }
+  /* Hide navigation when in admin login mode */
+  body.admin-login-mode header,
+  body.admin-login-mode nav,
+  body.admin-login-mode .navigation,
+  body.admin-login-mode #navigation,
+  body.admin-login-mode footer {
+    display: none !important;
+  }
+
+  /* Fullscreen overlay for admin login */
+  body.admin-login-mode {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Ensure admin login is on top */
+  .admin-login-mode .login-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 9999 !important;
+  }
+
+
+
+
+  /* Animated Banner Styles */
+  @keyframes gradient-xy {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  @keyframes shine {
+    0% {
+      transform: translateX(-100%) skewX(12deg);
+    }
+    100% {
+      transform: translateX(200%) skewX(12deg);
+    }
+  }
+
+  @keyframes float-slow {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translateY(-20px) translateX(10px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes float-medium {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px);
+      opacity: 0.4;
+    }
+    50% {
+      transform: translateY(-15px) translateX(-10px);
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes float-fast {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px);
+      opacity: 0.5;
+    }
+    50% {
+      transform: translateY(-25px) translateX(15px);
+      opacity: 0.9;
+    }
+  }
+
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-gradient-xy {
+    background-size: 200% 200%;
+    animation: gradient-xy 3s ease infinite;
+  }
+
+  .animate-shine {
+    animation: shine 3s ease-in-out infinite;
+  }
+
+  .animate-float-slow {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+
+  .animate-float-medium {
+    animation: float-medium 4s ease-in-out infinite;
+  }
+
+  .animate-float-fast {
+    animation: float-fast 3s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  .duration-5000 {
+    transition-duration: 5000ms;
+  }
+  
+
+
+
+
+
+
+
+
+
+
+  @keyframes bounce-ring {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-2px) rotate(-5deg);
+    }
+    75% {
+      transform: translateY(1px) rotate(5deg);
+    }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.4);
+      opacity: 0;
+    }
+  }
+
+  .badge-bounce {
+    animation: bounce-ring 0.5s ease-in-out;
+  }
+
+  .badge-pulse-ring {
+    animation: pulse-ring 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
