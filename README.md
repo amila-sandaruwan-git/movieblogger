@@ -1,46 +1,25 @@
 <div align="center">
-  
-  <!-- Logo / Banner -->
-  <img src="https://via.placeholder.com/1200x300/1a1a2e/ffffff?text=🎬+MovieBlogger" alt="MovieBlogger Banner" width="100%">
-  
-  <h1>🎬 MovieBlogger</h1>
-  
-  <p><strong>A Modern, Full-Featured Movie Review Platform</strong></p>
-  
-  <p>
-    Discover, review, and discuss movies with a vibrant community of film enthusiasts.
-  </p>
-  
-  <!-- Badges -->
-  <p>
-    <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js" alt="Next.js">
-    <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase">
-    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-    <img src="https://img.shields.io/badge/Tailwind-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind">
-    <img src="https://img.shields.io/badge/TMDB-01B4E4?style=for-the-badge&logo=themoviedatabase&logoColor=white" alt="TMDB">
-    <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License">
-  </p>
-  
-  <p>
-    <a href="#-live-demo">🌐 Live Demo</a> •
-    <a href="#-features">✨ Features</a> •
-    <a href="#-tech-stack">🛠️ Tech Stack</a> •
-    <a href="#-quick-start">🚀 Quick Start</a> •
-    <a href="#-database-schema">🗄️ Database</a> •
-    <a href="#-screenshots">📸 Screenshots</a>
-  </p>
-  
-  <hr>
-  
-</div>
+
+# 🎬 MovieBlogger
+
+### A Modern, Full-Featured Movie Review Platform
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![TMDB](https://img.shields.io/badge/TMDB-01B4E4?style=for-the-badge&logo=themoviedatabase&logoColor=white)](https://www.themoviedb.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 ---
+
+</div>
 
 ## 📖 About The Project
 
 **MovieBlogger** is a complete, production-ready movie review platform that combines the power of **Next.js** with **Supabase** and **TMDB API**. It offers a seamless experience for discovering films, writing reviews, and engaging with a community of movie lovers.
 
-### 🎯 Why MovieBlogger?
+### 🎯 Key Highlights
 
 - 🎥 **Automated Movie Data** – Fetch posters, trailers, cast, and ratings from TMDB
 - 💬 **Social Interactions** – Like, comment, follow, and bookmark
@@ -129,7 +108,6 @@
 | **API** | TMDB API | Movie data (posters, trailers, metadata) |
 | **Editor** | TinyMCE | Rich text editor for reviews |
 | **Icons** | Lucide Icons | Beautiful open-source icons |
-| **Images** | Next.js Image | Optimized image handling |
 
 </div>
 
@@ -144,9 +122,9 @@
 
 | Table | Purpose | Key Fields |
 |-------|---------|------------|
-| **profiles** | User profiles | id, name, email, avatar_url, banner_url, bio, social links, auth_provider, role |
-| **posts** | Movie reviews | id, movie_title, movie_poster_url, content, excerpt, director, cast, genre_tags, duration, tmdb_rating, status, visibility |
-| **comments** | Threaded comments | id, post_id, user_id, content, parent_id, is_edited, is_pinned |
+| **profiles** | User profiles | id, name, email, avatar_url, banner_url, bio, social links |
+| **posts** | Movie reviews | id, movie_title, content, excerpt, director, cast, genre_tags, tmdb_rating, status |
+| **comments** | Threaded comments | id, post_id, user_id, content, parent_id, is_pinned |
 | **follows** | Follow relationships | id, follower_id, following_id |
 | **bookmarks** | Saved posts | id, user_id, post_id, created_at |
 
@@ -156,7 +134,7 @@
 |-------|---------|------------|
 | **post_reactions** | Likes/dislikes | id, post_id, user_id, reaction_type |
 | **post_views** | View tracking | id, post_id, user_id, ip_address, session_id |
-| **notifications** | Real-time alerts | id, user_id, type, title, message, is_read, metadata |
+| **notifications** | Real-time alerts | id, user_id, type, title, message, is_read |
 
 ### Moderation Tables
 
