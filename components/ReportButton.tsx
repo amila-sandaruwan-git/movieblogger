@@ -344,7 +344,7 @@ export function ReportButton({ postId, userId, isAuthenticated }: ReportButtonPr
               <div className="flex items-center justify-center gap-2 mb-5">
                 <Shield size={16} className="text-[#888]" />
                 <p className="text-center text-[#aaa] text-sm">
-                  Help us keep MovieReel safe
+                  Help us keep MovieBlogger safe
                 </p>
               </div>
               

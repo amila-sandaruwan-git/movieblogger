@@ -196,7 +196,7 @@ export function FullReviewPopup({ isOpen, onClose, title, content, movieTitle }:
           {/* Footer Note */}
           <div className="mt-12 pt-6 border-t border-[#272727] text-center">
             <p className="text-xs text-[#555">
-              © MovieReel - Share your thoughts about this movie
+              © MovieBlogger - Share your thoughts about this movie
             </p>
           </div>
         </div>

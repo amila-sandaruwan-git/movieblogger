@@ -12,7 +12,7 @@ export async function Navigation() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo - Left Corner */}
         <Link href="/" className="flex items-center space-x-2">
-          <span className="text-xl font-bold text-gray-900 dark:text-white">MovieReel</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">MovieBlogger</span>
         </Link>
         
         {/* Center Navigation Links - Updated styling */}

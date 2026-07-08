@@ -1,7 +1,9 @@
+// components/ClientLayout.tsx - FIXED
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import NavigationWithNotifications from '@/components/NavigationWithNotifications'
+import Footer from '@/components/Footer'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 interface ClientLayoutProps {
@@ -24,11 +26,19 @@ export default function ClientLayout({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [showNavigation, setShowNavigation] = useState(true)
-  const [showFooter, setShowFooter] = useState(true)
+  const [showFooter, setShowFooter] = useState(false) // CHANGED: default to false
   
-  // Function to check if we should show navigation
-  const checkNavigationVisibility = useCallback(() => {
+  // Function to check if we should show navigation and footer
+  const checkVisibility = useCallback(() => {
     const currentPathname = window.location.pathname
+    
+    console.log('🔍 ClientLayout Debug:', {
+      currentPathname,
+      isDashboard: currentPathname.startsWith('/dashboard'),
+      isAdmin: currentPathname.startsWith('/admin'),
+      isHomepage: currentPathname === '/',
+      shouldShowFooter: currentPathname === '/' // ALWAYS TRUE FOR HOMEPAGE
+    })
     
     // Check for admin pages
     const isAdminPage = currentPathname.startsWith('/admin')
@@ -38,30 +48,30 @@ export default function ClientLayout({
     const isAdminLogin = currentPathname === '/login' && currentSearchParams.get('from') === 'admin'
     
     // Don't show navigation on admin pages or admin login
-    // Admin login page should not show nav, but regular login page should
     const shouldHideNav = isAdminPage || isAdminLogin
     
     setShowNavigation(!shouldHideNav)
-    setShowFooter(!shouldHideNav)
     
-    console.log('Navigation check:', {
-      pathname: currentPathname,
-      search: currentSearchParams.toString(),
-      isAdminPage,
-      isAdminLogin,
-      showNavigation: !shouldHideNav
-    })
+    // ONLY SHOW FOOTER ON HOMEPAGE ( / )
+    if (currentPathname === '/') {
+      console.log('✅ Homepage detected - showing footer')
+      setShowFooter(true)
+    } else {
+      console.log('❌ Not homepage - hiding footer')
+      setShowFooter(false)
+    }
+    
   }, [])
 
   // Check on mount and when pathname/searchParams change
   useEffect(() => {
-    checkNavigationVisibility()
-  }, [checkNavigationVisibility, pathname, searchParams])
+    checkVisibility()
+  }, [checkVisibility, pathname, searchParams])
 
-  // Listen to popstate events (when user uses browser back/forward)
+  // Listen to popstate events
   useEffect(() => {
     const handlePopState = () => {
-      checkNavigationVisibility()
+      checkVisibility()
     }
     
     window.addEventListener('popstate', handlePopState)
@@ -69,21 +79,20 @@ export default function ClientLayout({
     return () => {
       window.removeEventListener('popstate', handlePopState)
     }
-  }, [checkNavigationVisibility])
+  }, [checkVisibility])
 
-  // Also listen to custom events if you want to trigger from login component
+  // Listen to custom events
   useEffect(() => {
     const handleUrlChange = () => {
-      checkNavigationVisibility()
+      checkVisibility()
     }
     
-    // Custom event listener
     window.addEventListener('urlchanged', handleUrlChange)
     
     return () => {
       window.removeEventListener('urlchanged', handleUrlChange)
     }
-  }, [checkNavigationVisibility])
+  }, [checkVisibility])
 
   return (
     <>
@@ -96,13 +105,13 @@ export default function ClientLayout({
         />
       )}
       
-      {/* Main content - adjust padding based on navigation visibility */}
+      {/* Main content */}
       <main className={`min-h-screen ${showNavigation ? 'pt-16' : 'pt-0'}`}>
         {children}
       </main>
       
-      {/* Footer - hide for admin pages and admin login */}
-      
+      {/* ONLY SHOW FOOTER ON HOMEPAGE */}
+      {showFooter && <Footer />}
     </>
   )
 }

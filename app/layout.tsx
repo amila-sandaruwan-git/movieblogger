@@ -13,7 +13,7 @@ import { EdgeFix } from '@/components/EdgeFix'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MovieReel - Your Ultimate Movie Guide',
+  title: 'MovieBlogger - Your Ultimate Movie Guide',
   description: 'Discover your next favorite film with in-depth reviews and discussions',
 }
 

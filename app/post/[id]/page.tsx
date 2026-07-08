@@ -1011,7 +1011,7 @@ export default function PostPage({ params }: PostPageProps) {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4">MovieReel</h3>
+              <h3 className="text-2xl font-bold mb-4">MovieBlogger</h3>
               <p className="text-gray-300 max-w-md">
                 Your ultimate guide to the world of cinema. Reviews, news, and more.
               </p>
@@ -1062,7 +1062,7 @@ export default function PostPage({ params }: PostPageProps) {
           </div>
           
           <div className="border-t border-white/20 mt-12 pt-8 text-center text-gray-400 text-sm">
-            <p>© {new Date().getFullYear()} MovieReel. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
             <p className="mt-2">Movie data from TMDB. All trademarks belong to their respective owners.</p>
           </div>
         </div>

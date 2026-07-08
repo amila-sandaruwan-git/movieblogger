@@ -9,6 +9,7 @@ import HomepageSearch from '@/components/HomepageSearch'
 import { AuthorProfileModal } from '@/components/AuthorProfileModal'
 import { useClientSession } from '@/hooks/useClientSession'
 import { useEdgeFix } from '@/hooks/useEdgeFix'
+import Footer from '@/components/Footer'  // ADDED: Import Footer
 
 import { Star, Calendar, Clock, Globe, Film, ChevronRight, TrendingUp, Users, Zap, Award, Heart, Loader2, MessageCircle, Eye, ThumbsUp, Sparkles, Flame, Tv, Monitor, Headphones } from 'lucide-react'
 
@@ -788,7 +789,7 @@ export default function Home() {
           <div className="relative">
             <div className="text-6xl md:text-7xl lg:text-8xl font-bold relative">
               <span className="text-gray-700">
-                MovieReel
+                MovieBlogger
               </span>
               <span 
                 className="absolute inset-0 bg-linear-to-r from-purple-500 via-pink-500 to-blue-500 bg-clip-text text-transparent"
@@ -797,7 +798,7 @@ export default function Home() {
                   transition: 'clip-path 0.1s ease-out'
                 }}
               >
-                MovieReel
+                MovieBlogger
               </span>
             </div>
             <div 
@@ -1371,75 +1372,11 @@ export default function Home() {
             </section>
           </div>
 
-          {/* Footer */}
-          <footer className="bg-gray-900 border-t border-gray-800 py-16">
-            <div className="container mx-auto px-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="md:col-span-2">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <span className="text-2xl font-bold text-white">MovieReel</span>
-                  </div>
-                  <p className="text-gray-400 max-w-md">
-                    Your ultimate guide to the world of cinema. Discover reviews, news, and hidden gems from passionate movie lovers.
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-white text-lg mb-4 flex items-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    Quick Links
-                  </h4>
-                  <ul className="space-y-3 text-gray-400">
-                    <li>
-                      <Link href="/reviews" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
-                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        Reviews
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/about" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
-                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        About Us
-                      </Link>
-                    </li>
-                    <li>
-                      <Link href="/contact" className="hover:text-purple-400 transition-colors flex items-center gap-2 group">
-                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        Contact
-                      </Link>
-                    </li>
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-white text-lg mb-4 flex items-center gap-2">
-                    <Heart className="w-4 h-4" />
-                    Stay Updated
-                  </h4>
-                  <p className="text-gray-400 mb-4 text-sm">
-                    Get the latest movie news and reviews delivered to your inbox.
-                  </p>
-                  <div className="flex flex-col space-y-3">
-                    <input 
-                      type="email" 
-                      placeholder="Enter your email"
-                      className="px-4 py-3 rounded-lg bg-gray-800 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-700"
-                    />
-                    <button className="bg-linear-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium">
-                      Subscribe
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-                <p>© {new Date().getFullYear()} MovieReel. All rights reserved.</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Made with ❤️ for movie lovers everywhere
-                </p>
-              </div>
-            </div>
-          </footer>
+          {/* ============================================ */}
+          {/* REMOVED: Old footer section was here */}
+          {/* Footer is now imported and added below */}
+          {/* ============================================ */}
+          
         </div>
       </div>
 
@@ -1452,6 +1389,9 @@ export default function Home() {
           currentUserId={user?.id}
         />
       )}
+
+      {/* ADDED: Footer component - shows on homepage only */}
+      <Footer />
     </div>
   )
 }

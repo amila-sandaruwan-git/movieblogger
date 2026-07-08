@@ -156,7 +156,7 @@ export default function SignupPage() {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-linear-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            MovieReel
+            MovieBlogger
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Create your account</p>
         </div>

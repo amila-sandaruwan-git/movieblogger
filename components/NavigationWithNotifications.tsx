@@ -348,9 +348,9 @@ export default function NavigationWithNotifications({
         .single()
       
       const adminEmails = [
-        'admin@moviereel.com',
-        'administrator@moviereel.com',
-        'superadmin@moviereel.com'
+        'admin@movieblogger.com',
+        'administrator@movieblogger.com',
+        'superadmin@movieblogger.com'
       ]
       
       return userData?.email ? adminEmails.includes(userData.email) : false
@@ -688,7 +688,7 @@ export default function NavigationWithNotifications({
       case 'message':
         return `${metadata.sender_name || 'Someone'} sent you a message`
       case 'welcome':
-        return notification.message || 'Welcome to MovieReel! 🎬'
+        return notification.message || 'Welcome to MovieBlogger! 🎬'
       case 'like':
         return `${metadata.sender_name || 'Someone'} liked your post`
       default:
@@ -972,7 +972,7 @@ export default function NavigationWithNotifications({
           <div className="max-w-7xl mx-auto w-full flex items-center justify-between gap-4">
             <Link href="/" className="flex items-center shrink-0">
               <span className="text-xl lg:text-2xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent whitespace-nowrap">
-                MovieReel
+                MovieBlogger
               </span>
             </Link>
             
@@ -1025,7 +1025,7 @@ export default function NavigationWithNotifications({
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold bg-linear-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                MovieReel
+                MovieBlogger
               </span>
             </Link>
             

@@ -217,7 +217,7 @@ export default function AboutPage() {
                 <Film className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white">
-                About <span className="text-blue-600 dark:text-blue-400">MovieReel</span>
+                About <span className="text-blue-600 dark:text-blue-400">MovieBlogger</span>
               </h1>
             </div>
             
@@ -250,7 +250,7 @@ export default function AboutPage() {
               </div>
               
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                At MovieReel, we're on a mission to create the most vibrant and authentic community for movie lovers worldwide. 
+                At MovieBlogger, we're on a mission to create the most vibrant and authentic community for movie lovers worldwide. 
                 We believe that every film deserves thoughtful discussion and every moviegoer deserves a platform to share their voice.
               </p>
               
@@ -318,7 +318,7 @@ export default function AboutPage() {
               Our Core Values
             </h2>
             <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              The principles that guide everything we do at MovieReel
+              The principles that guide everything we do at MovieBlogger
             </p>
           </div>
           
@@ -350,7 +350,7 @@ export default function AboutPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Why Choose MovieReel?
+              Why Choose MovieBlogger?
             </h2>
             <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Experience cinema discussion like never before
@@ -557,7 +557,7 @@ export default function AboutPage() {
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <Film className="w-6 h-6 text-blue-400" />
-                <span className="text-2xl font-bold">MovieReel</span>
+                <span className="text-2xl font-bold">MovieBlogger</span>
               </div>
               <p className="text-gray-400 max-w-md">
                 Your ultimate guide to the world of cinema. Discover reviews, news, and hidden gems from passionate movie lovers.
@@ -613,7 +613,7 @@ export default function AboutPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} MovieReel. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
             <p className="text-sm mt-2">Made with ❤️ for the love of cinema</p>
           </div>
         </div>

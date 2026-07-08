@@ -309,7 +309,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
-                <span className="text-2xl font-bold">MovieReel</span>
+                <span className="text-2xl font-bold">MovieBlogger</span>
               </div>
               <p className="text-gray-400 max-w-md">
                 Your ultimate guide to the world of cinema. Discover reviews, news, and hidden gems from passionate movie lovers.
@@ -365,7 +365,7 @@ export default async function ReviewsPage({ searchParams }: ReviewsPageProps) {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} MovieReel. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
           </div>
         </div>
       </footer>

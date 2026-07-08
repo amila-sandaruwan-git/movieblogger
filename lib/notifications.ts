@@ -437,7 +437,7 @@ export const notificationHelpers = {
       userId,
       type: 'welcome',
       title: 'Welcome!',
-      message: `Welcome to MovieReel, ${userName}! 🎬`,
+      message: `Welcome to MovieBlogger, ${userName}! 🎬`,
       metadata: {
         is_welcome: true
       }
@@ -552,7 +552,7 @@ export const notificationHelpers = {
       case 'welcome':
       default:
         title = 'Welcome!'
-        message = `Test: Welcome to MovieReel, ${userName}!`
+        message = `Test: Welcome to MovieBlogger, ${userName}!`
         metadata.is_welcome = true
         break
     }

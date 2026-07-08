@@ -156,7 +156,7 @@ export default function ContactPage() {
     {
       icon: <Mail className="w-5 h-5" />,
       title: "Email",
-      details: ["support@moviereel.com", "feedback@moviereel.com"],
+      details: ["support@movieblogger.com", "feedback@movieblogger.com"],
       description: "We typically respond within 24 hours"
     },
     {
@@ -182,11 +182,11 @@ export default function ContactPage() {
   const faqs = [
     {
       question: "How can I report inappropriate content?",
-      answer: "Use the 'Report' button on any review or comment, or email us at moderation@moviereel.com with the content link and reason for reporting."
+      answer: "Use the 'Report' button on any review or comment, or email us at moderation@movieblogger.com with the content link and reason for reporting."
     },
     {
       question: "Can I request a feature for the platform?",
-      answer: "Absolutely! We welcome all suggestions. Use the 'Feature Request' subject in the contact form or email features@moviereel.com."
+      answer: "Absolutely! We welcome all suggestions. Use the 'Feature Request' subject in the contact form or email features@movieblogger.com."
     },
     {
       question: "How do I become a featured reviewer?",
@@ -474,7 +474,7 @@ export default function ContactPage() {
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-white">MovieReel HQ</p>
+                      <p className="font-medium text-gray-900 dark:text-white">MovieBlogger HQ</p>
                       <p className="text-gray-600 dark:text-gray-300">123 Cinema Street</p>
                       <p className="text-gray-600 dark:text-gray-300">Hollywood, CA 90210</p>
                       <p className="text-gray-600 dark:text-gray-300">United States</p>
@@ -517,7 +517,7 @@ export default function ContactPage() {
             <div className="md:col-span-2">
               <div className="flex items-center space-x-2 mb-4">
                 <MessageSquare className="w-6 h-6 text-blue-400" />
-                <span className="text-2xl font-bold">MovieReel Support</span>
+                <span className="text-2xl font-bold">MovieBlogger Support</span>
               </div>
               <p className="text-gray-400 max-w-md">
                 We're here to help. Whether you have questions about our platform, need technical support, 
@@ -574,7 +574,7 @@ export default function ContactPage() {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} MovieReel. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
             <p className="text-sm mt-2">
               Support available 24/7 via email and community forums
             </p>

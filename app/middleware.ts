@@ -179,9 +179,9 @@ export async function middleware(request: NextRequest) {
         
         // For development/testing, allow admin access based on email
         const adminEmails = [
-          'admin@moviereel.com',
-          'administrator@moviereel.com',
-          'superadmin@moviereel.com'
+          'admin@movieblogger.com',
+          'administrator@movieblogger.com',
+          'superadmin@movieblogger.com'
         ]
         
         if (user.email && adminEmails.includes(user.email.toLowerCase())) {
