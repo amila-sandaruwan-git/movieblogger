@@ -162,13 +162,13 @@ export default function ContactPage() {
     {
       icon: <Phone className="w-5 h-5" />,
       title: "Phone",
-      details: ["+1 (555) 123-4567", "+1 (555) 987-6543"],
+      details: ["+94 72 000-0000", "+94 70 000-6543"],
       description: "Monday to Friday, 9AM - 6PM EST"
     },
     {
       icon: <MapPin className="w-5 h-5" />,
       title: "Office",
-      details: ["123 Cinema Street", "Hollywood, CA 90210", "United States"],
+      details: ["No: 12", "Yahalamulla", "Walpala", "Imaduwa"],
       description: "By appointment only"
     },
     {
@@ -475,9 +475,9 @@ export default function ContactPage() {
                     <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">MovieBlogger HQ</p>
-                      <p className="text-gray-600 dark:text-gray-300">123 Cinema Street</p>
-                      <p className="text-gray-600 dark:text-gray-300">Hollywood, CA 90210</p>
-                      <p className="text-gray-600 dark:text-gray-300">United States</p>
+                      <p className="text-gray-600 dark:text-gray-300">No:12</p>
+                      <p className="text-gray-600 dark:text-gray-300">Yahalamulla, Walpala</p>
+                      <p className="text-gray-600 dark:text-gray-300">Imaduwa</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
