@@ -1,22 +1,34 @@
-/* app/globals.css */
 @import "tailwindcss";
 
-/* Custom CSS */
+/* ------------------------------------------------------------------
+   MovieBlogger design system
+   Cinematic dark base · warm "projector gold" accent · serif display type
+------------------------------------------------------------------- */
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+
+  --color-ink-950: #08080a;
+  --color-ink-900: #0e0e12;
+  --color-ink-800: #15151b;
+  --color-ink-700: #1d1d25;
+  --color-ink-600: #2a2a34;
+  --color-ink-500: #3a3a47;
+
+  --color-gold-300: #f8d98a;
+  --color-gold-400: #f5c451;
+  --color-gold-500: #e9b02f;
+  --color-gold-600: #c98f12;
+
+  --color-crimson-500: #e5484d;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/* Class-based dark mode */
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
@@ -25,321 +37,190 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans);
+  overflow-x: hidden;
 }
 
-/* Smooth transitions for theme switching */
 * {
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-/* Custom scrollbar for dark mode */
-.dark ::-webkit-scrollbar {
-  width: 8px;
+::selection { background: rgba(245, 196, 81, 0.35); }
+
+.dark ::-webkit-scrollbar { width: 8px; }
+.dark ::-webkit-scrollbar-track { background: #15151b; }
+.dark ::-webkit-scrollbar-thumb { background: #3a3a47; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #55556a; }
+
+@keyframes ring {
+  0%,100% { transform: rotate(0); }
+  10%,30%,50% { transform: rotate(-10deg); }
+  20%,40%,60% { transform: rotate(10deg); }
+}
+.animate-ring { animation: ring 0.5s ease-in-out; }
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in-right { animation: slideInRight 0.3s ease-out; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up { animation: fadeUp 0.6s cubic-bezier(.2,.7,.2,1) both; }
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
 }
 
-.dark ::-webkit-scrollbar-track {
-  background: #1f2937;
+img {
+  image-rendering: -webkit-optimize-contrast;
+  -webkit-font-smoothing: antialiased;
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: #4b5563;
-  border-radius: 4px;
-}
+/* ------------------------------------------------------------------
+   Reusable building blocks — use these on every page for consistency
+------------------------------------------------------------------- */
+@layer components {
+  .mb-container { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
 
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: #6b7280;
-}
-/* Smooth transitions for sidebar */
-.sidebar-transition {
-  transition: all 0.3s ease-in-out;
-}
-
-/* Prevent horizontal scroll */
-body {
-  overflow-x: hidden;
-}
-
-/* Ensure dark mode works with Tailwind v4 */
-@layer base {
-  :root {
-    --color-background: #ffffff;
-    --color-foreground: #171717;
+  .mb-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-gold-400;
   }
 
-  .dark {
-    --color-background: #0a0a0a;
-    --color-foreground: #ededed;
+  .mb-display { @apply font-display tracking-tight; }
+
+  .mb-section-title {
+    @apply font-display text-2xl sm:text-3xl font-semibold tracking-tight text-white;
   }
 
-  
-  
-
- 
-  
-
-  /* Ensure proper stacking context */
-  nav {
-    z-index: 50 !important;
+  .mb-surface {
+    @apply rounded-2xl border border-white/10 bg-ink-800/70 backdrop-blur-sm;
   }
 
-  .trailer-popup {
-    z-index: 9999 !important;
+  .mb-card {
+    @apply flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-ink-800/60
+           transition duration-300 hover:-translate-y-1 hover:border-gold-400/40
+           hover:shadow-[0_18px_40px_-18px_rgba(245,196,81,0.25)];
   }
 
-  .hero-section {
-    position: relative;
-    z-index: 0;
-  }
-  
-  
-
-  /* Improve image rendering */
-  img {
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  .mb-chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1
+           text-xs font-medium text-gray-300 transition hover:border-gold-400/50 hover:bg-gold-400/10 hover:text-gold-300;
   }
 
-  /* Prevent blur on scale */
-  .group:hover img {
-    filter: none !important;
+  .mb-btn,
+  .mb-btn-primary,
+  .mb-btn-ghost,
+  .mb-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold
+           transition active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2
+           focus-visible:outline-gold-400 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .mb-btn-primary { @apply bg-gold-400 text-ink-950 hover:bg-gold-300; }
+  .mb-btn-ghost   { @apply border border-white/15 bg-white/5 text-white hover:border-gold-400/50 hover:bg-white/10; }
+  .mb-btn-danger  { @apply bg-crimson-500/90 text-white hover:bg-crimson-500; }
+
+  .mb-input {
+    @apply w-full rounded-xl border border-white/10 bg-ink-900/80 px-4 py-3 text-sm text-white
+           placeholder:text-gray-500 transition focus:border-gold-400/60 focus:outline-none
+           focus:ring-2 focus:ring-gold-400/20;
+  }
+  .mb-label { @apply mb-1.5 block text-sm font-medium text-gray-300; }
+
+  .mb-skeleton {
+    @apply relative overflow-hidden rounded-xl bg-ink-700;
+  }
+  .mb-skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/5 to-transparent;
+    animation: shimmer 1.4s infinite;
   }
 
-  /* Better backdrop image quality */
-  .bg-backdrop {
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-  }
-
-  @keyframes pulse-subtle {
-  0%, 100% {
-    opacity: 0.8;
-  }
-  50% {
-    opacity: 0.9;
-  }
-  }
-  
-  .animate-pulse-subtle {
-    animation: pulse-subtle 1.5s ease-in-out infinite;
-  }
-  /* Add to your global.css */
-  .z-100 {
-    z-index: 100;
-  }
-  .z-101 {
-    z-index: 101;
-  }
-  /* Add to globals.css or your main CSS file */
-  .notification-dropdown-desktop {
-    position: absolute !important;
-    right: 0 !important;
-    top: 100% !important;
-    margin-top: 0.5rem !important;
-    z-index: 1000 !important;
-  }
-
-  .notification-dropdown-mobile {
-    position: fixed !important;
-    top: 4rem !important;
-    right: 1rem !important;
-    z-index: 1000 !important;
-  }
-
-
-  /* Add to your global CSS */
-  @keyframes ring {
-    0% { transform: rotate(0deg); }
-    10% { transform: rotate(-10deg); }
-    20% { transform: rotate(10deg); }
-    30% { transform: rotate(-10deg); }
-    40% { transform: rotate(10deg); }
-    50% { transform: rotate(-5deg); }
-    60% { transform: rotate(5deg); }
-    70% { transform: rotate(0deg); }
-    100% { transform: rotate(0deg); }
-  }
-
-  .animate-ring {
-    animation: ring 1s ease-in-out;
-  }
-
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  .animate-slideInRight {
-    animation: slideInRight 0.3s ease-out;
-  }
-  /* Hide navigation when in admin login mode */
-  body.admin-login-mode header,
-  body.admin-login-mode nav,
-  body.admin-login-mode .navigation,
-  body.admin-login-mode #navigation,
-  body.admin-login-mode footer {
-    display: none !important;
-  }
-
-  /* Fullscreen overlay for admin login */
-  body.admin-login-mode {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-  }
-
-  /* Ensure admin login is on top */
-  .admin-login-mode .login-container {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    z-index: 9999 !important;
-  }
-
-
-
-
-  /* Animated Banner Styles */
-  @keyframes gradient-xy {
-    0%, 100% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-  }
-
-  @keyframes shine {
-    0% {
-      transform: translateX(-100%) skewX(12deg);
-    }
-    100% {
-      transform: translateX(200%) skewX(12deg);
-    }
-  }
-
-  @keyframes float-slow {
-    0%, 100% {
-      transform: translateY(0px) translateX(0px);
-      opacity: 0.6;
-    }
-    50% {
-      transform: translateY(-20px) translateX(10px);
-      opacity: 1;
-    }
-  }
-
-  @keyframes float-medium {
-    0%, 100% {
-      transform: translateY(0px) translateX(0px);
-      opacity: 0.4;
-    }
-    50% {
-      transform: translateY(-15px) translateX(-10px);
-      opacity: 0.8;
-    }
-  }
-
-  @keyframes float-fast {
-    0%, 100% {
-      transform: translateY(0px) translateX(0px);
-      opacity: 0.5;
-    }
-    50% {
-      transform: translateY(-25px) translateX(15px);
-      opacity: 0.9;
-    }
-  }
-
-  @keyframes spin-slow {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  .animate-gradient-xy {
-    background-size: 200% 200%;
-    animation: gradient-xy 3s ease infinite;
-  }
-
-  .animate-shine {
-    animation: shine 3s ease-in-out infinite;
-  }
-
-  .animate-float-slow {
-    animation: float-slow 6s ease-in-out infinite;
-  }
-
-  .animate-float-medium {
-    animation: float-medium 4s ease-in-out infinite;
-  }
-
-  .animate-float-fast {
-    animation: float-fast 3s ease-in-out infinite;
-  }
-
-  .animate-spin-slow {
-    animation: spin-slow 3s linear infinite;
-  }
-
-  .duration-5000 {
-    transition-duration: 5000ms;
-  }
-  
-
-
-
-
-
-
-
-
-
-
-  @keyframes bounce-ring {
-    0%, 100% {
-      transform: translateY(0) rotate(0deg);
-    }
-    25% {
-      transform: translateY(-2px) rotate(-5deg);
-    }
-    75% {
-      transform: translateY(1px) rotate(5deg);
-    }
-  }
-
-  @keyframes pulse-ring {
-    0% {
-      transform: scale(0.8);
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.4);
-      opacity: 0;
-    }
-  }
-
-  .badge-bounce {
-    animation: bounce-ring 0.5s ease-in-out;
-  }
-
-  .badge-pulse-ring {
-    animation: pulse-ring 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* subtle film-grain/vignette used behind heroes */
+  .mb-vignette {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(245,196,81,0.10), transparent 60%),
+      linear-gradient(to bottom, rgba(8,8,10,0.55), rgba(8,8,10,0.85) 70%, #0e0e12);
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .mb-skeleton::after { animation: none; }
+}
+
+/* ------------------------------------------------------------------
+   Long-form review content (rendered from the TinyMCE editor HTML).
+   Plain CSS so it works with or without the typography plugin.
+------------------------------------------------------------------- */
+.mb-prose { color: #d4d4dc; font-size: 1.0625rem; line-height: 1.8; overflow-wrap: anywhere; }
+.mb-prose > * + * { margin-top: 1.25em; }
+.mb-prose h1, .mb-prose h2, .mb-prose h3, .mb-prose h4 {
+  font-family: var(--font-display); color: #fff; font-weight: 600; line-height: 1.25; margin-top: 2em;
+}
+.mb-prose h1 { font-size: 2rem; }
+.mb-prose h2 { font-size: 1.6rem; }
+.mb-prose h3 { font-size: 1.3rem; }
+.mb-prose p:first-of-type::first-letter {
+  font-family: var(--font-display); font-size: 3.2em; float: left; line-height: 0.9;
+  padding: 0.08em 0.12em 0 0; color: var(--color-gold-400);
+}
+.mb-prose a { color: var(--color-gold-400); text-decoration: underline; text-underline-offset: 3px; }
+.mb-prose a:hover { color: var(--color-gold-300); }
+.mb-prose strong { color: #fff; font-weight: 600; }
+.mb-prose ul, .mb-prose ol { padding-left: 1.4em; }
+.mb-prose ul { list-style: disc; }
+.mb-prose ol { list-style: decimal; }
+.mb-prose li + li { margin-top: 0.4em; }
+.mb-prose li::marker { color: var(--color-gold-500); }
+.mb-prose blockquote {
+  border-left: 3px solid var(--color-gold-400); padding: 0.25em 0 0.25em 1.25em;
+  font-family: var(--font-display); font-size: 1.2em; font-style: italic; color: #fff;
+}
+.mb-prose img, .mb-prose video, .mb-prose iframe {
+  max-width: 100%; height: auto; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.1);
+}
+.mb-prose iframe { width: 100%; aspect-ratio: 16 / 9; height: auto; }
+.mb-prose hr { border: 0; border-top: 1px solid rgba(255,255,255,0.12); margin: 2.5em 0; }
+.mb-prose code { background: rgba(255,255,255,0.08); padding: 0.15em 0.4em; border-radius: 0.375rem; font-size: 0.9em; }
+.mb-prose pre { background: var(--color-ink-900); padding: 1rem; border-radius: 0.75rem; overflow-x: auto; }
+.mb-prose table { width: 100%; border-collapse: collapse; display: block; overflow-x: auto; }
+.mb-prose th, .mb-prose td { border: 1px solid rgba(255,255,255,0.12); padding: 0.6em 0.9em; text-align: left; }
+.mb-prose th { background: rgba(255,255,255,0.05); color: #fff; }
+
+/* ------------------------------------------------------------------
+   Form controls
+------------------------------------------------------------------- */
+input[type="checkbox"], input[type="radio"] { accent-color: var(--color-gold-400); }
+select.mb-input { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239ca3af' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.9rem center; padding-right: 2.5rem; }
+select.mb-input option { background: var(--color-ink-800); color: #fff; }
+input[type="date"].mb-input { color-scheme: dark; }
+.mb-input[readonly] { cursor: not-allowed; opacity: 0.7; }
+
+/* ------------------------------------------------------------------
+   Slim gold scrollbar — add the `mb-scroll` class to any scrollable
+   panel (notification dropdown, chat lists, etc.)
+------------------------------------------------------------------- */
+.mb-scroll {
+  scrollbar-width: thin;                                   /* Firefox */
+  scrollbar-color: rgba(245, 196, 81, 0.35) transparent;
+  scrollbar-gutter: stable;
+}
+.mb-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.mb-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;                                           /* keeps the bar off the rounded corners */
+}
+.mb-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, rgba(245, 196, 81, 0.55), rgba(201, 143, 18, 0.35));
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s ease;
+}
+.mb-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #f5c451, #e9b02f);
+  background-clip: padding-box;
+}
+.mb-scroll::-webkit-scrollbar-corner { background: transparent; }

@@ -1,96 +1,56 @@
-// app/layout.tsx - UPDATED with EdgeFix component
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Fraunces } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { createClient } from '@/lib/supabase/server'
-import { headers } from 'next/headers'
 import ClientLayout from '@/components/ClientLayout'
-import { SessionManager } from '@/components/SessionManager'
-import { AuthStateUpdater } from '@/components/AuthStateUpdater'
-import { EdgeFix } from '@/components/EdgeFix'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' })
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'MovieBlogger - Your Ultimate Movie Guide',
   description: 'Discover your next favorite film with in-depth reviews and discussions',
 }
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const headersList = await headers()
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
-  
-  // Get user session
   const { data: { user } } = await supabase.auth.getUser()
-  
-  // Parse notification data from headers
+
+  let profile: any = null
   let notifications: any[] = []
   let unreadCount = 0
-  
-  try {
-    const notificationsHeader = headersList.get('x-user-notifications')
-    const unreadCountHeader = headersList.get('x-user-unread-count')
-    
-    if (notificationsHeader) {
-      notifications = JSON.parse(notificationsHeader)
-    }
-    
-    if (unreadCountHeader) {
-      unreadCount = parseInt(unreadCountHeader) || 0
-    }
-  } catch (error) {
-    console.error('Error parsing notification headers:', error)
+
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, name, avatar_url, role')
+      .eq('id', user.id)
+      .single()
+    profile = data
+
+    const { data: notifs } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    notifications = notifs || []
+    unreadCount = notifications.filter(n => !n.is_read).length
   }
 
-  // Get flags from middleware
-  const isLoginPage = headersList.get('x-is-login-page') === 'true'
-  const isAdminLoginPage = headersList.get('x-is-admin-login-page') === 'true'
-  
-  // Check if current page is admin page
-  const currentPath = headersList.get('x-current-path') || ''
-  const isAdminPage = currentPath.startsWith('/admin')
-
-  // For admin pages, don't use ClientLayout (which includes Navbar)
-  if (isAdminPage) {
-    return (
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-        </head>
-        <body className={`${inter.className} bg-gray-50 dark:bg-gray-900`}>
-          <ThemeProvider>
-            <EdgeFix />
-            <SessionManager />
-            <AuthStateUpdater />
-            {children}
-          </ThemeProvider>
-        </body>
-      </html>
-    )
-  }
-
-  // For non-admin pages, use ClientLayout with Navbar
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
       </head>
-      <body className={`${inter.className} bg-white dark:bg-gray-900`}>
+      <body className={`${inter.variable} ${fraunces.variable} font-sans antialiased bg-white dark:bg-ink-950`}>
         <ThemeProvider>
-          <EdgeFix />
-          <SessionManager />
-          <AuthStateUpdater />
           <ClientLayout
             user={user}
+            profile={profile}
             notifications={notifications}
             unreadCount={unreadCount}
-            isLoginPage={isLoginPage}
-            isAdminLoginPage={isAdminLoginPage}
           >
             {children}
           </ClientLayout>

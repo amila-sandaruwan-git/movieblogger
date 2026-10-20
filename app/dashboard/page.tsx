@@ -1,757 +1,187 @@
-// app/dashboard/page.tsx - Dark theme design matching sidebar with session fix
 'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useClientSession } from '@/hooks/useClientSession'
-
-interface Post {
-  id: string
-  content: string
-  excerpt: string
-  rating: number
-  rating_scale: '5' | '10'
-  status: 'draft' | 'published' | 'private' | 'scheduled'
-  visibility: 'public' | 'private'
-  created_at: string
-  movie_title: string
-  movie_background_title: string
-  movie_poster_url: string
-  release_date: string
-  director: string
-  cast: string[]
-  genre_tags: string[]
-  duration: number
-  review_language: string
-  movie_language: string
-  trailer_url: string
-  tags: string[]
-  scheduled_for: string | null
-  published_at: string
-  comments_enabled: boolean
-  tmdb_id?: number
-  tmdb_rating?: number
-  imdb_id?: string
-}
-
-interface DashboardStats {
-  totalPosts: number
-  publishedPosts: number
-  draftPosts: number
-  scheduledPosts: number
-  totalComments: number
-  followersCount: number
-  followingCount: number
-  views: {
-    allTime: number
-    today: number
-    yesterday: number
-    thisMonth: number
-    lastMonth: number
-  }
-}
+import Link from 'next/link'
+import { Users, UserPlus, FileText, Eye, CheckCircle2, FilePen, CalendarClock, Plus, Pencil, Send, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
-  // Session sync hook - fixes the tab switch issue
-  const { user: clientUser, isLoading: sessionLoading, sessionChecked } = useClientSession()
-  
-  const [posts, setPosts] = useState<Post[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPosts: 0,
-    publishedPosts: 0,
-    draftPosts: 0,
-    scheduledPosts: 0,
-    totalComments: 0,
-    followersCount: 0,
-    followingCount: 0,
-    views: {
-      allTime: 0,
-      today: 0,
-      yesterday: 0,
-      thisMonth: 0,
-      lastMonth: 0
-    }
-  })
-  const [viewsTimeframe, setViewsTimeframe] = useState<'24h' | '7d' | '30d' | '3m' | '12m' | 'all'>('30d')
-  const [viewsData, setViewsData] = useState<number[]>([])
-  
+  const [posts, setPosts] = useState<any[]>([])
+  const [stats, setStats] = useState({ total: 0, published: 0, drafts: 0, scheduled: 0, views: 0, followers: 0, following: 0 })
+  const [loading, setLoading] = useState(true)
   const supabase = createClient()
   const router = useRouter()
 
-  // Redirect if no user after session check
   useEffect(() => {
-    if (sessionChecked && !clientUser) {
-      router.push('/login')
-    }
-  }, [clientUser, sessionChecked, router])
-
-  useEffect(() => {
-    fetchDashboardData()
-  }, [])
-
-  useEffect(() => {
-    generateViewsData()
-  }, [viewsTimeframe])
-
-  const fetchDashboardData = async () => {
-    try {
-      setIsLoading(true)
-      
+    const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        router.push('/login')
-        return
-      }
+      if (!user) { router.push('/login'); return }
 
-      const { data: postsData } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
+      const { data: postsData } = await supabase.from('posts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
       setPosts(postsData || [])
 
-      const publishedPosts = postsData?.filter(post => post.status === 'published') || []
-      const draftPosts = postsData?.filter(post => post.status === 'draft') || []
-      const scheduledPosts = postsData?.filter(post => post.status === 'scheduled') || []
+      const [fol, fing] = await Promise.all([
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', user.id),
+        supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', user.id),
+      ])
 
-      const { count: followersCount } = await supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('following_id', user.id)
-
-      const { count: followingCount } = await supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('follower_id', user.id)
-
-      let totalComments = 0
-      try {
-        const { count, error } = await supabase
-          .from('comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('post_author_id', user.id)
-        
-        if (!error) {
-          totalComments = count || 0
-        }
-      } catch (error) {
-        console.warn('Comments table not available yet:', error)
-        totalComments = 0
-      }
-
-      const allTimeViews = postsData?.reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const todayViews = postsData?.filter(post => {
-        const postDate = new Date(post.created_at)
-        postDate.setHours(0, 0, 0, 0)
-        return postDate.getTime() === today.getTime()
-      }).reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-
-      const yesterday = new Date()
-      yesterday.setDate(yesterday.getDate() - 1)
-      yesterday.setHours(0, 0, 0, 0)
-      const yesterdayViews = postsData?.filter(post => {
-        const postDate = new Date(post.created_at)
-        postDate.setHours(0, 0, 0, 0)
-        return postDate.getTime() === yesterday.getTime()
-      }).reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-
-      const currentMonth = new Date().getMonth()
-      const currentYear = new Date().getFullYear()
-      const thisMonthViews = postsData?.filter(post => {
-        const postDate = new Date(post.created_at)
-        return postDate.getMonth() === currentMonth && postDate.getFullYear() === currentYear
-      }).reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-
-      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
-      const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
-      const lastMonthViews = postsData?.filter(post => {
-        const postDate = new Date(post.created_at)
-        return postDate.getMonth() === lastMonth && postDate.getFullYear() === lastMonthYear
-      }).reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-
-      const realStats: DashboardStats = {
-        totalPosts: postsData?.length || 0,
-        publishedPosts: publishedPosts.length,
-        draftPosts: draftPosts.length,
-        scheduledPosts: scheduledPosts.length,
-        totalComments: totalComments,
-        followersCount: followersCount || 0,
-        followingCount: followingCount || 0,
-        views: {
-          allTime: allTimeViews,
-          today: todayViews,
-          yesterday: yesterdayViews,
-          thisMonth: thisMonthViews,
-          lastMonth: lastMonthViews
-        }
-      }
-
-      setStats(realStats)
-
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-    } finally {
-      setIsLoading(false)
+      const list = postsData || []
+      setStats({
+        total: list.length,
+        published: list.filter(p => p.status === 'published').length,
+        drafts: list.filter(p => p.status === 'draft').length,
+        scheduled: list.filter(p => p.status === 'scheduled').length,
+        views: list.reduce((s, p) => s + (p.view_count || 0), 0),
+        followers: fol.count || 0,
+        following: fing.count || 0,
+      })
+      setLoading(false)
     }
+    load()
+  }, [])
+
+  const deletePost = async (id: string) => {
+    if (!confirm('Delete this post?')) return
+    await supabase.from('post_reactions').delete().eq('post_id', id)
+    await supabase.from('comments').delete().eq('post_id', id)
+    await supabase.from('post_views').delete().eq('post_id', id)
+    await supabase.from('posts').delete().eq('id', id)
+    setPosts(posts.filter(p => p.id !== id))
   }
 
-  const generateViewsData = () => {
-    const days = viewsTimeframe === '24h' ? 1 : 
-                 viewsTimeframe === '7d' ? 7 : 
-                 viewsTimeframe === '30d' ? 30 : 
-                 viewsTimeframe === '3m' ? 90 : 
-                 viewsTimeframe === '12m' ? 12 : 12
-    
-    const data = []
-    for (let i = 0; i < days; i++) {
-      data.push(Math.floor(Math.random() * 91) + 10)
-    }
-    setViewsData(data)
+  const publishPost = async (id: string) => {
+    await supabase.from('posts').update({ status: 'published', published_at: new Date().toISOString(), visibility: 'public' }).eq('id', id)
+    setPosts(posts.map(p => p.id === id ? { ...p, status: 'published' } : p))
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
-
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  const getMovieYear = (releaseDate: string) => {
-    if (!releaseDate) return 'N/A'
-    return new Date(releaseDate).getFullYear()
-  }
-
-  const handleEditPost = (postId: string) => {
-    router.push(`/dashboard/edit-post/${postId}`)
-  }
-
-  const handleViewPost = (postId: string) => {
-    window.open(`/post/${postId}`, '_blank')
-  }
-
-  const handleDeletePost = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      return
-    }
-
-    try {
-      const { error } = await supabase
-        .from('posts')
-        .delete()
-        .eq('id', postId)
-
-      if (error) throw error
-
-      fetchDashboardData()
-    } catch (error) {
-      console.error('Error deleting post:', error)
-      alert('Failed to delete post')
-    }
-  }
-
-  const handlePublishPost = async (postId: string) => {
-    try {
-      const { error } = await supabase
-        .from('posts')
-        .update({ 
-          status: 'published',
-          published_at: new Date().toISOString(),
-          visibility: 'public'
-        })
-        .eq('id', postId)
-
-      if (error) throw error
-
-      fetchDashboardData()
-    } catch (error) {
-      console.error('Error publishing post:', error)
-      alert('Failed to publish post')
-    }
-  }
-
-  const handleUnpublishPost = async (postId: string) => {
-    try {
-      const { error } = await supabase
-        .from('posts')
-        .update({ 
-          status: 'draft',
-          visibility: 'private'
-        })
-        .eq('id', postId)
-
-      if (error) throw error
-
-      fetchDashboardData()
-    } catch (error) {
-      console.error('Error unpublishing post:', error)
-      alert('Failed to unpublish post')
-    }
-  }
-
-  const handleRevertScheduledPost = async (postId: string) => {
-    try {
-      const { error } = await supabase        .from('posts')
-        .update({ 
-          status: 'draft',
-          scheduled_for: null
-        })
-        .eq('id', postId)
-
-      if (error) throw error
-
-      fetchDashboardData()
-    } catch (error) {
-      console.error('Error reverting scheduled post:', error)
-      alert('Failed to revert scheduled post')
-    }
-  }
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-100">
-        <div className="text-gray-400">Loading dashboard...</div>
+      <div className="space-y-6">
+        <div className="mb-skeleton h-12 w-64" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => <div key={i} className="mb-skeleton h-28" />)}
+        </div>
+        <div className="mb-skeleton h-72" />
       </div>
     )
   }
 
+  const headline = [
+    { label: 'Followers', value: stats.followers, icon: <Users size={18} />, tint: 'text-gold-400 bg-gold-400/10' },
+    { label: 'Following', value: stats.following, icon: <UserPlus size={18} />, tint: 'text-sky-300 bg-sky-400/10' },
+    { label: 'Total Posts', value: stats.total, icon: <FileText size={18} />, tint: 'text-emerald-300 bg-emerald-400/10' },
+    { label: 'Total Views', value: stats.views, icon: <Eye size={18} />, tint: 'text-fuchsia-300 bg-fuchsia-400/10' },
+  ]
+
+  const breakdown = [
+    { label: 'Published', value: stats.published, icon: <CheckCircle2 size={16} />, color: 'text-emerald-300', bar: 'bg-emerald-400' },
+    { label: 'Drafts', value: stats.drafts, icon: <FilePen size={16} />, color: 'text-amber-300', bar: 'bg-amber-400' },
+    { label: 'Scheduled', value: stats.scheduled, icon: <CalendarClock size={16} />, color: 'text-sky-300', bar: 'bg-sky-400' },
+  ]
+
+  const statusStyle: Record<string, string> = {
+    published: 'bg-emerald-400/10 text-emerald-300 ring-emerald-400/30',
+    draft: 'bg-amber-400/10 text-amber-300 ring-amber-400/30',
+    scheduled: 'bg-sky-400/10 text-sky-300 ring-sky-400/30',
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Dashboard Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white mb-2">
-          Dashboard Overview
-        </h1>
-        <p className="text-sm text-gray-400">
-          Track your blog performance and manage your content.
-        </p>
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="mb-eyebrow mb-2">Overview</p>
+          <h1 className="mb-display text-3xl font-semibold text-white">Dashboard Overview</h1>
+          <p className="mt-1 text-sm text-gray-400">Track your blog performance</p>
+        </div>
+        <Link href="/dashboard/new-post" className="mb-btn-primary">
+          <Plus size={16} /> New Post
+        </Link>
       </div>
 
-      {/* Stats Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Followers */}
-        <div className="bg-linear-to-br from-purple-600 to-pink-600 rounded-xl p-5 text-white shadow-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-semibold mb-1 opacity-90">Followers</h3>
-              <p className="text-2xl font-bold">{stats.followersCount.toLocaleString()}</p>
+      {/* Headline stats */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {headline.map(s => (
+          <div key={s.label} className="rounded-2xl border border-white/10 bg-ink-900/70 p-5 transition hover:border-gold-400/30">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-400">{s.label}</span>
+              <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${s.tint}`}>{s.icon}</span>
             </div>
-            <div className="text-2xl">👥</div>
+            <p className="mb-display mt-3 text-3xl font-semibold text-white">{s.value.toLocaleString()}</p>
           </div>
-          <p className="text-xs opacity-80 mt-2">People following you</p>
-        </div>
-
-        {/* Following */}
-        <div className="bg-linear-to-br from-blue-600 to-cyan-600 rounded-xl p-5 text-white shadow-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-semibold mb-1 opacity-90">Following</h3>
-              <p className="text-2xl font-bold">{stats.followingCount.toLocaleString()}</p>
-            </div>
-            <div className="text-2xl">📈</div>
-          </div>
-          <p className="text-xs opacity-80 mt-2">People you follow</p>
-        </div>
-
-        {/* Total Posts */}
-        <div className="bg-linear-to-br from-green-600 to-emerald-600 rounded-xl p-5 text-white shadow-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-semibold mb-1 opacity-90">Total Posts</h3>
-              <p className="text-2xl font-bold">{stats.totalPosts.toLocaleString()}</p>
-            </div>
-            <div className="text-2xl">📝</div>
-          </div>
-          <p className="text-xs opacity-80 mt-2">All your posts</p>
-        </div>
-
-        {/* Comments */}
-        <div className="bg-linear-to-br from-orange-600 to-red-600 rounded-xl p-5 text-white shadow-lg">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-semibold mb-1 opacity-90">Comments</h3>
-              <p className="text-2xl font-bold">{stats.totalComments.toLocaleString()}</p>
-            </div>
-            <div className="text-2xl">💬</div>
-          </div>
-          <p className="text-xs opacity-80 mt-2">Total comments received</p>
-        </div>
+        ))}
       </div>
 
-      {/* Views Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">All Time Views</h3>
-          <p className="text-2xl font-bold text-white">{stats.views.allTime.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">Unique visitors</p>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Today</h3>
-          <p className="text-2xl font-bold text-green-400">{stats.views.today.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">Since midnight</p>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Yesterday</h3>
-          <p className="text-2xl font-bold text-blue-400">{stats.views.yesterday.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">Previous day</p>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">This Month</h3>
-          <p className="text-2xl font-bold text-purple-400">{stats.views.thisMonth.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">Month to date</p>
-        </div>
-
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Last Month</h3>
-          <p className="text-2xl font-bold text-orange-400">{stats.views.lastMonth.toLocaleString()}</p>
-          <p className="text-xs text-gray-500 mt-1">Previous month</p>
-        </div>
+      {/* Status breakdown */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {breakdown.map(b => {
+          const pct = stats.total > 0 ? Math.round((b.value / stats.total) * 100) : 0
+          return (
+            <div key={b.label} className="rounded-2xl border border-white/10 bg-ink-900/70 p-5">
+              <div className={`flex items-center gap-2 text-sm ${b.color}`}>{b.icon} {b.label}</div>
+              <p className="mb-display mt-2 text-3xl font-semibold text-white">{b.value}</p>
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div className={`h-full rounded-full ${b.bar}`} style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          )
+        })}
       </div>
 
-      {/* Post Status Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">Published</h3>
-              <p className="text-2xl font-bold text-green-400">{stats.publishedPosts.toLocaleString()}</p>
-            </div>
-            <div className="text-2xl text-green-500">✅</div>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Live posts</p>
+      {/* Recent posts */}
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="mb-display text-xl font-semibold text-white">Recent Posts</h2>
+          <Link href="/dashboard/posts" className="text-sm font-medium text-gold-400 transition hover:text-gold-300">View all</Link>
         </div>
 
-        <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">Drafts</h3>
-              <p className="text-2xl font-bold text-yellow-400">{stats.draftPosts.toLocaleString()}</p>
-            </div>
-            <div className="text-2xl text-yellow-500">📄</div>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">In progress</p>
-        </div>
+        {posts.length > 0 ? (
+          <div className="space-y-3">
+            {posts.slice(0, 8).map(post => (
+              <div key={post.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-ink-900/70 p-4 transition hover:border-white/20">
+                <div className="flex min-w-0 items-center gap-4">
+                  {post.movie_poster_url ? (
+                    <img src={post.movie_poster_url} alt="" className="h-14 w-10 shrink-0 rounded-md object-cover ring-1 ring-white/10" />
+                  ) : (
+                    <div className="flex h-14 w-10 shrink-0 items-center justify-center rounded-md bg-ink-700 text-gray-500"><FileText size={14} /></div>
+                  )}
+                  <div className="min-w-0">
+                    <h3 className="truncate font-semibold text-white">{post.movie_title}</h3>
+                    <p className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ring-1 ${statusStyle[post.status] || 'bg-white/10 text-gray-300 ring-white/20'}`}>
+                        {post.status}
+                      </span>
+                      {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
 
-        <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">Scheduled</h3>
-              <p className="text-2xl font-bold text-blue-400">{stats.scheduledPosts.toLocaleString()}</p>
-            </div>
-            <div className="text-2xl text-blue-500">⏰</div>
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Future posts</p>
-        </div>
-      </div>
-
-      {/* Views Analytics */}
-      <div className="bg-gray-800 rounded-xl p-5 border border-gray-700">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-lg font-bold text-white">Views Analytics</h2>
-            <p className="text-sm text-gray-400">Track your post views over time</p>
-          </div>
-          
-          <div className="flex flex-wrap gap-1">
-            {(['24h', '7d', '30d', '3m', '12m', 'all'] as const).map((timeframe) => (
-              <button
-                key={timeframe}
-                onClick={() => setViewsTimeframe(timeframe)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
-                  viewsTimeframe === timeframe 
-                    ? 'bg-purple-600 text-white' 
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                {timeframe.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="h-48 flex items-end space-x-1 pt-4 border-t border-gray-700">
-          {viewsData.map((value, index) => {
-            const maxValue = Math.max(...viewsData)
-            const height = maxValue > 0 ? (value / maxValue) * 100 : 0
-            
-            return (
-              <div key={index} className="flex-1 flex flex-col items-center">
-                <div 
-                  className="w-full bg-linear-to-t from-purple-500 to-pink-500 rounded-t transition-all duration-300 hover:from-purple-600 hover:to-pink-600"
-                  style={{ height: `${height}%`, minHeight: height > 0 ? '2px' : '0' }}
-                  title={`${value} views`}
-                />
-                <div className="text-xs text-gray-500 mt-2">
-                  {index + 1}
+                <div className="flex items-center gap-1">
+                  <Link href={`/dashboard/edit-post/${post.id}`} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-sky-300 transition hover:bg-sky-400/10">
+                    <Pencil size={14} /> Edit
+                  </Link>
+                  {post.status !== 'published' && (
+                    <button onClick={() => publishPost(post.id)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-emerald-300 transition hover:bg-emerald-400/10">
+                      <Send size={14} /> Publish
+                    </button>
+                  )}
+                  <button onClick={() => deletePost(post.id)} className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-red-300 transition hover:bg-crimson-500/10">
+                    <Trash2 size={14} /> Delete
+                  </button>
                 </div>
               </div>
-            )
-          })}
-        </div>
-        
-        <div className="text-center mt-4 text-xs text-gray-500">
-          Showing {viewsTimeframe} views data (mock data for demonstration)
-        </div>
-      </div>
-
-      {/* Recent Posts Section */}
-      <div className="space-y-8">
-        {/* Published Posts */}
-        <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">Published Posts</h2>
-            <span className="text-sm text-gray-400">{stats.publishedPosts} posts</span>
+            ))}
           </div>
-          
-          {stats.publishedPosts > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {posts
-                .filter(post => post.status === 'published')
-                .slice(0, 6)
-                .map((post) => (
-                <div 
-                  key={post.id} 
-                  onClick={() => handleEditPost(post.id)}
-                  className="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 cursor-pointer hover:border-purple-500 transition-all duration-200 group"
-                >
-                  {post.movie_poster_url && (
-                    <div className="h-48 overflow-hidden">
-                      <img
-                        src={post.movie_poster_url}
-                        alt={post.movie_title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-white truncate">
-                          {post.movie_title} ({getMovieYear(post.release_date)})
-                        </h3>
-                        <p className="text-xs text-gray-400">
-                          {formatDate(post.published_at || post.created_at)}
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEditPost(post.id)
-                        }}
-                        className="text-purple-400 hover:text-purple-300 text-sm bg-gray-700 px-2 py-1 rounded z-10 relative ml-2"
-                      >
-                        ✏️ Edit
-                      </button>
-                    </div>
-                    
-                    {post.excerpt && (
-                      <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                        {post.excerpt}
-                      </p>
-                    )}
-                    
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {post.genre_tags?.slice(0, 2).map((genre, index) => (
-                        <span key={index} className="text-xs bg-purple-900/50 text-purple-300 px-2 py-1 rounded">
-                          {genre}
-                        </span>
-                      ))}
-                    </div>
-                    
-                    <div 
-                      className="flex flex-wrap gap-2 justify-between items-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => handleViewPost(post.id)}
-                        className="text-sm text-gray-400 hover:text-white transition px-2 py-1 hover:bg-gray-700 rounded"
-                      >
-                        View
-                      </button>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleUnpublishPost(post.id)}
-                          className="text-sm text-orange-400 hover:text-orange-300 px-2 py-1 hover:bg-orange-500/20 rounded"
-                        >
-                          Unpublish
-                        </button>
-                        <button
-                          onClick={() => handleDeletePost(post.id)}
-                          className="text-sm text-red-400 hover:text-red-300 px-2 py-1 hover:bg-red-500/20 rounded"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-800 rounded-xl p-8 text-center border border-gray-700">
-              <div className="text-4xl mb-4">📝</div>
-              <p className="text-gray-400">
-                You haven't published any reviews yet.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* Drafts Section */}
-        <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">Drafts</h2>
-            <span className="text-sm text-gray-400">{stats.draftPosts} posts</span>
+        ) : (
+          <div className="rounded-2xl border border-dashed border-white/15 bg-ink-900/40 p-12 text-center">
+            <FileText size={32} className="mx-auto mb-3 text-gray-600" />
+            <p className="text-gray-400">
+              No posts yet.{' '}
+              <Link href="/dashboard/new-post" className="font-semibold text-gold-400 hover:text-gold-300">Create your first</Link>
+            </p>
           </div>
-          
-          {stats.draftPosts > 0 ? (
-            <div className="space-y-3">
-              {posts
-                .filter(post => post.status === 'draft')
-                .slice(0, 5)
-                .map((post) => (
-                <div 
-                  key={post.id} 
-                  onClick={() => handleEditPost(post.id)}
-                  className="bg-yellow-900/20 rounded-xl p-4 border border-yellow-800/50 cursor-pointer hover:border-yellow-700 transition-all duration-200"
-                >
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                    <div>
-                      <h3 className="font-semibold text-white">
-                        {post.movie_title} ({getMovieYear(post.release_date)})
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        Last edited {formatDate(post.created_at)}
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEditPost(post.id)
-                        }}
-                        className="text-blue-400 hover:text-blue-300 text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handlePublishPost(post.id)
-                        }}
-                        className="text-green-400 hover:text-green-300 text-sm"
-                      >
-                        Publish
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeletePost(post.id)
-                        }}
-                        className="text-red-400 hover:text-red-300 text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-800 rounded-xl p-6 text-center border border-gray-700">
-              <p className="text-gray-400">No drafts saved.</p>
-            </div>
-          )}
-        </section>
-
-        {/* Scheduled Posts Section */}
-        <section>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-white">Scheduled Posts</h2>
-            <span className="text-sm text-gray-400">{stats.scheduledPosts} posts</span>
-          </div>
-          
-          {stats.scheduledPosts > 0 ? (
-            <div className="space-y-3">
-              {posts
-                .filter(post => post.status === 'scheduled')
-                .slice(0, 5)
-                .map((post) => (
-                <div 
-                  key={post.id} 
-                  onClick={() => handleEditPost(post.id)}
-                  className="bg-blue-900/20 rounded-xl p-4 border border-blue-800/50 cursor-pointer hover:border-blue-700 transition-all duration-200"
-                >
-                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                    <div>
-                      <h3 className="font-semibold text-white">
-                        {post.movie_title} ({getMovieYear(post.release_date)})
-                      </h3>
-                      <p className="text-xs text-blue-400">
-                        ⏰ Scheduled for {formatDateTime(post.scheduled_for || '')}
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEditPost(post.id)
-                        }}
-                        className="text-blue-400 hover:text-blue-300 text-sm"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleRevertScheduledPost(post.id)
-                        }}
-                        className="text-yellow-400 hover:text-yellow-300 text-sm"
-                      >
-                        Revert
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeletePost(post.id)
-                        }}
-                        className="text-red-400 hover:text-red-300 text-sm"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-gray-800 rounded-xl p-6 text-center border border-gray-700">
-              <p className="text-gray-400">No scheduled posts.</p>
-            </div>
-          )}
-        </section>
-      </div>
+        )}
+      </section>
     </div>
   )
 }

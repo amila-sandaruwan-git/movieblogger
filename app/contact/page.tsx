@@ -1,4 +1,3 @@
-// app/contact/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -15,7 +14,8 @@ import {
   Clock,
   Globe,
   Users,
-  Shield
+  Shield,
+  ChevronDown
 } from 'lucide-react'
 
 interface ContactFormData {
@@ -125,8 +125,8 @@ export default function ContactPage() {
 
       // Reset form
       setFormData({
-        name: user?.name || '',
-        email: user?.email || '',
+        name: userWithProfile?.user_metadata?.name || '',
+        email: userWithProfile?.user_metadata?.email || user?.email || '',
         subject: '',
         message: ''
       })
@@ -198,389 +198,194 @@ export default function ContactPage() {
     }
   ]
 
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        
-      </nav>
-
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20" />
-        
-        <div className="container mx-auto px-4 py-16 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center gap-3 mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-linear-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <MessageSquare className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white">
-                  Get in <span className="text-blue-600 dark:text-blue-400">Touch</span>
-                </h1>
-                <p className="text-xl text-gray-600 dark:text-gray-300 mt-4">
-                  We'd love to hear from you. Send us a message and we'll respond as soon as possible.
-                </p>
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-ink-950 text-white">
+      {/* ================= HERO ================= */}
+      <header className="relative isolate overflow-hidden border-b border-white/10">
+        <div className="mb-vignette absolute inset-0 -z-10" />
+        <div className="mb-container animate-fade-up py-16 text-center sm:py-24">
+          <p className="mb-eyebrow mb-4 inline-flex items-center gap-2"><MessageSquare size={14} /> Contact</p>
+          <h1 className="mb-display text-4xl font-semibold sm:text-6xl">
+            Get in <span className="text-gold-400">Touch</span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-gray-300">
+            We&apos;d love to hear from you. Send us a message and we&apos;ll respond as soon as possible.
+          </p>
         </div>
-      </div>
+      </header>
 
-      {/* Contact Form & Info */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-12 h-12 rounded-xl bg-linear-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                    <Send className="w-6 h-6 text-white" />
+      <div className="mb-container py-14">
+        <div className="grid gap-10 lg:grid-cols-5">
+          {/* ---------- Form ---------- */}
+          <div className="lg:col-span-3">
+            <div className="mb-surface p-6 sm:p-8">
+              <div className="mb-7 flex items-center gap-3">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gold-400 text-ink-950">
+                  <Send size={20} />
+                </span>
+                <h2 className="mb-display text-2xl font-semibold">Send us a Message</h2>
+              </div>
+
+              {submitStatus === 'success' && (
+                <div role="status" className="mb-6 flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+                  <CheckCircle className="mt-0.5 h-5 w-5 shrink-0" /> <p>{submitMessage}</p>
+                </div>
+              )}
+              {submitStatus === 'error' && (
+                <div role="alert" className="mb-6 flex items-start gap-3 rounded-xl border border-crimson-500/30 bg-crimson-500/10 p-4 text-sm text-red-300">
+                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" /> <p>{submitMessage}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label htmlFor="name" className="mb-label">Your Name *</label>
+                    <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} required className="mb-input" placeholder="Enter your name" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    Send us a Message
-                  </h2>
+                  <div>
+                    <label htmlFor="email" className="mb-label">Email Address *</label>
+                    <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} required className="mb-input" placeholder="your.email@example.com" />
+                  </div>
                 </div>
 
-                {/* Status Messages */}
-                {submitStatus === 'success' && (
-                  <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
-                      <p className="text-green-700 dark:text-green-300">{submitMessage}</p>
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label htmlFor="subject" className="mb-label">Subject *</label>
+                  <select id="subject" name="subject" value={formData.subject} onChange={handleInputChange} required className="mb-input">
+                    <option value="">Select a subject</option>
+                    <option value="General Inquiry">General Inquiry</option>
+                    <option value="Technical Support">Technical Support</option>
+                    <option value="Feedback">Feedback</option>
+                    <option value="Report Content">Report Content</option>
+                    <option value="Feature Request">Feature Request</option>
+                    <option value="Partnership">Partnership</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
 
-                {submitStatus === 'error' && (
-                  <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                      <p className="text-red-700 dark:text-red-300">{submitMessage}</p>
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label htmlFor="message" className="mb-label">Your Message *</label>
+                  <textarea id="message" name="message" value={formData.message} onChange={handleInputChange} required rows={6} className="mb-input resize-none" placeholder="Tell us how we can help..." />
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Your Name *
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
-                        placeholder="Enter your name"
-                      />
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
-                        placeholder="your.email@example.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Subject *
-                    </label>
-                    <select
-                      id="subject"
-                      name="subject"
-                      value={formData.subject}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
-                    >
-                      <option value="">Select a subject</option>
-                      <option value="General Inquiry">General Inquiry</option>
-                      <option value="Technical Support">Technical Support</option>
-                      <option value="Feedback">Feedback</option>
-                      <option value="Report Content">Report Content</option>
-                      <option value="Feature Request">Feature Request</option>
-                      <option value="Partnership">Partnership</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Your Message *
-                    </label>
-                    <textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleInputChange}
-                      required
-                      rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-colors resize-none"
-                      placeholder="Tell us how we can help..."
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      * Required fields
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-8 py-3 rounded-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          Send Message
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs text-gray-500">* Required fields</p>
+                  <button type="submit" disabled={isSubmitting} className="mb-btn-primary !px-8 !py-3">
+                    {isSubmitting ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-ink-950 border-t-transparent" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Send Message
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
+          </div>
 
-            {/* Contact Information & FAQs */}
-            <div className="lg:col-span-1 space-y-8">
-              {/* Contact Info Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {contactInfo.map((info, index) => (
-                  <div 
-                    key={index}
-                    className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-200 dark:border-gray-700"
-                  >
-                    <div className="w-12 h-12 rounded-lg bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center mb-4">
-                      <div className="text-blue-600 dark:text-blue-400">
-                        {info.icon}
-                      </div>
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">
-                      {info.title}
-                    </h3>
-                    <div className="space-y-2">
+          {/* ---------- Info ---------- */}
+          <aside className="space-y-6 lg:col-span-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              {contactInfo.map((info, index) => (
+                <div key={index} className="flex gap-4 rounded-2xl border border-white/10 bg-ink-800/60 p-5 transition hover:border-gold-400/30">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-400/10 text-gold-400">
+                    {info.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="mb-display font-semibold text-white">{info.title}</h3>
+                    <div className="mt-1.5 space-y-0.5 text-sm text-gray-300">
                       {info.details.map((detail, idx) => (
-                        <p key={idx} className="text-gray-700 dark:text-gray-300">
-                          {detail}
-                        </p>
+                        <p key={idx} className="break-words">{detail}</p>
                       ))}
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-                      {info.description}
-                    </p>
+                    <p className="mt-2 text-xs text-gray-500">{info.description}</p>
                   </div>
-                ))}
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+
+        {/* ---------- FAQ ---------- */}
+        <section className="mt-20">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <p className="mb-eyebrow mb-3 inline-flex items-center gap-2"><Users size={14} /> FAQ</p>
+            <h2 className="mb-section-title">Frequently Asked Questions</h2>
+          </div>
+          <div className="mx-auto max-w-3xl space-y-3">
+            {faqs.map((faq, index) => (
+              <details key={index} className="group rounded-2xl border border-white/10 bg-ink-800/60 transition open:border-gold-400/30">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-semibold text-white [&::-webkit-details-marker]:hidden">
+                  {faq.question}
+                  <ChevronDown size={18} className="shrink-0 text-gold-400 transition-transform group-open:rotate-180" />
+                </summary>
+                <p className="px-5 pb-5 text-sm leading-relaxed text-gray-400">{faq.answer}</p>
+              </details>
+            ))}
+          </div>
+          <p className="mx-auto mt-6 flex max-w-3xl items-center justify-center gap-2 text-center text-sm text-gray-500">
+            <Shield className="h-4 w-4 shrink-0" />
+            Your privacy is important to us. We never share your personal information with third parties.
+          </p>
+        </section>
+
+        {/* ---------- Location ---------- */}
+        <section className="mt-20 rounded-3xl border border-white/10 bg-ink-900/60 p-6 sm:p-10">
+          <div className="grid items-center gap-8 lg:grid-cols-3">
+            <div>
+              <h2 className="mb-display mb-5 text-2xl font-semibold">Our Location</h2>
+              <div className="space-y-5">
+                <div className="flex items-start gap-3">
+                  <MapPin className="mt-1 h-5 w-5 shrink-0 text-gold-400" />
+                  <div className="text-sm text-gray-300">
+                    <p className="font-medium text-white">MovieBlogger HQ</p>
+                    <p>No:12</p>
+                    <p>Yahalamulla, Walpala</p>
+                    <p>Imaduwa</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Globe className="mt-1 h-5 w-5 shrink-0 text-gold-400" />
+                  <div className="text-sm text-gray-300">
+                    <p className="font-medium text-white">Global Community</p>
+                    <p>Active users from 150+ countries</p>
+                    <p>24/7 platform availability</p>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* FAQs Section */}
-              <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-linear-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                    <Users className="w-5 h-5 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Frequently Asked Questions
-                  </h2>
-                </div>
-
-                <div className="space-y-4">
-                  {faqs.map((faq, index) => (
-                    <div 
-                      key={index}
-                      className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700"
-                    >
-                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                        {faq.question}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-300 text-sm">
-                        {faq.answer}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5 text-gray-400" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Your privacy is important to us. We never share your personal information with third parties.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Social & Community */}
-              <div className="bg-linear-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8">
+            <div className="lg:col-span-2">
+              {/* Placeholder for Google Maps or any map component */}
+              <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-white/15 bg-ink-800/60 md:h-80">
                 <div className="text-center">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Join Our Community
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6">
-                    Connect with thousands of movie enthusiasts, share reviews, and participate in discussions.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Link 
-                      href="/reviews"
-                      className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 font-medium"
-                    >
-                      Browse Reviews
-                    </Link>
-                    <Link 
-                      href="/signup"
-                      className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-700 px-6 py-3 rounded-lg hover:shadow-lg transition-all duration-300 font-medium"
-                    >
-                      Join Free
-                    </Link>
-                  </div>
+                  <MapPin className="mx-auto mb-3 h-10 w-10 text-gray-600" />
+                  <p className="font-medium text-gray-400">Interactive Map Location</p>
+                  <p className="mt-1 text-xs text-gray-600">(You can integrate Google Maps API here)</p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Map/Address Section */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-              <div className="lg:col-span-1">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                  Our Location
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">MovieBlogger HQ</p>
-                      <p className="text-gray-600 dark:text-gray-300">No:12</p>
-                      <p className="text-gray-600 dark:text-gray-300">Yahalamulla, Walpala</p>
-                      <p className="text-gray-600 dark:text-gray-300">Imaduwa</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-1" />
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">Global Community</p>
-                      <p className="text-gray-600 dark:text-gray-300">Active users from 150+ countries</p>
-                      <p className="text-gray-600 dark:text-gray-300">24/7 platform availability</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="lg:col-span-2">
-                {/* Placeholder for Google Maps or any map component */}
-                <div className="bg-gray-200 dark:bg-gray-700 rounded-xl h-64 md:h-80 flex items-center justify-center">
-                  <div className="text-center">
-                    <MapPin className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                    <p className="text-gray-500 dark:text-gray-400 font-medium">
-                      Interactive Map Location
-                    </p>
-                    <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-                      (You can integrate Google Maps API here)
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* ---------- Community CTA ---------- */}
+        <section className="mt-20 rounded-3xl border border-gold-400/30 bg-gradient-to-br from-gold-500/15 via-ink-800 to-ink-900 p-10 text-center">
+          <h3 className="mb-display text-2xl font-semibold">Join Our Community</h3>
+          <p className="mx-auto mt-3 max-w-xl text-gray-300">
+            Connect with thousands of movie enthusiasts, share reviews, and participate in discussions.
+          </p>
+          <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href="/reviews" className="mb-btn-primary">Browse Reviews</Link>
+            <Link href="/signup" className="mb-btn-ghost">Join Free</Link>
           </div>
-        </div>
+        </section>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-linear-to-br from-gray-900 to-black text-white py-16 dark:from-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <MessageSquare className="w-6 h-6 text-blue-400" />
-                <span className="text-2xl font-bold">MovieBlogger Support</span>
-              </div>
-              <p className="text-gray-400 max-w-md">
-                We're here to help. Whether you have questions about our platform, need technical support, 
-                or want to provide feedback, we're always ready to assist.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Send className="w-4 h-4" />
-                Quick Links
-              </h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="/reviews" className="hover:text-white transition-colors flex items-center gap-2 group">
-                    <span className="w-0 h-0 rounded-full bg-blue-500 group-hover:w-2 group-hover:h-2 transition-all" />
-                    Reviews
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors flex items-center gap-2 group">
-                    <span className="w-0 h-0 rounded-full bg-blue-500 group-hover:w-2 group-hover:h-2 transition-all" />
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-2 group">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Newsletter
-              </h4>
-              <p className="text-gray-400 mb-4 text-sm">
-                Stay updated with movie news, reviews, and platform updates.
-              </p>
-              <div className="flex flex-col space-y-3">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email"
-                  className="px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-                <button className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium">
-                  Subscribe
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
-            <p className="text-sm mt-2">
-              Support available 24/7 via email and community forums
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

@@ -1,126 +1,123 @@
-// components/TrailerPlayButton.tsx - FIXED with hover text
 'use client'
 
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Play, X } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import { AuthRequiredModal } from './AuthRequiredModal'
 
-interface TrailerPlayButtonProps {
+export function TrailerPlayButton({
+  trailerUrl,
+  movieTitle,
+  isAuthenticated,
+}: {
   trailerUrl: string
   movieTitle: string
-}
-
-export default function TrailerPlayButton({ trailerUrl, movieTitle }: TrailerPlayButtonProps) {
-  const [showPopup, setShowPopup] = useState(false)
-  const popupRef = useRef<HTMLDivElement>(null)
-
-  const extractYouTubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/
-    const match = url.match(regExp)
-    return (match && match[2].length === 11) ? match[2] : null
-  }
-
-  const youtubeId = extractYouTubeId(trailerUrl)
-
-  const handlePlayClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setShowPopup(true)
-  }
+  isAuthenticated: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const [authModalOpen, setAuthModalOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
-        setShowPopup(false)
-      }
-    }
+    setMounted(true)
+  }, [])
 
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showPopup) {
-        setShowPopup(false)
-      }
-    }
+  const getYoutubeId = (url: string) => {
+    const m = url.match(
+      /(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*)/
+    )
+    return m && m[1] && m[1].length === 11 ? m[1] : null
+  }
 
-    if (showPopup) {
-      document.addEventListener('mousedown', handleClickOutside)
-      document.addEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'hidden'
-      // Prevent scrolling on body
-      document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
-    }
+  const id = getYoutubeId(trailerUrl)
 
+  useEffect(() => {
+    if (!open) return
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('keydown', esc)
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-      document.removeEventListener('keydown', handleEscape)
-      document.body.style.overflow = 'unset'
-      document.body.style.position = 'static'
+      document.removeEventListener('keydown', esc)
+      document.body.style.overflow = ''
     }
-  }, [showPopup])
+  }, [open])
 
-  if (!youtubeId) return null
+  if (!id) return null
+
+  const handleClick = () => {
+    if (!isAuthenticated) {
+      setAuthModalOpen(true)
+      return
+    }
+    setOpen(true)
+  }
+
+  const modal = open ? (
+    <div
+      className="animate-fade-up fixed inset-0 z-[100000] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+      onClick={() => setOpen(false)}
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${movieTitle} trailer`}
+    >
+      <div
+        className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl shadow-black"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 bg-ink-900 px-5 py-3">
+          <p className="mb-display truncate text-base font-semibold text-white">
+            {movieTitle} <span className="text-gold-400">· Trailer</span>
+          </p>
+          <button
+            onClick={() => setOpen(false)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-gold-400 hover:text-ink-950"
+            aria-label="Close trailer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="relative pt-[56.25%]">
+          <iframe
+            src={`https://www.youtube.com/embed/${id}?autoplay=1&rel=0`}
+            title={`${movieTitle} Trailer`}
+            className="absolute inset-0 h-full w-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
+        </div>
+      </div>
+    </div>
+  ) : null
 
   return (
     <>
       <button
-        onClick={handlePlayClick}
-        className="group/play relative flex flex-col items-center justify-center"
+        onClick={handleClick}
+        className="group relative flex flex-col items-center"
         aria-label={`Watch ${movieTitle} trailer`}
       >
-        <div className="relative">
-          <div className="absolute inset-0 bg-red-600 rounded-full animate-ping opacity-20"></div>
-          <div className="absolute inset-4 bg-red-600 rounded-full opacity-30"></div>
-          <div className="relative w-20 h-20 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700 transition-colors duration-300 shadow-2xl transform group-hover/play:scale-110">
-            <Play size={32} className="text-white ml-1" fill="white" />
-          </div>
-        </div>
-        
-        {/* Hover text - appears on hover */}
-        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/play:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-          <span className="text-white font-semibold text-sm bg-black/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-white/30 shadow-xl">
-            Watch Trailer
-          </span>
-        </div>
+        <span className="absolute left-1/2 top-0 h-20 w-20 -translate-x-1/2 animate-ping rounded-full bg-gold-400 opacity-30 sm:h-24 sm:w-24" />
+        <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-gold-400 shadow-[0_0_50px_rgba(245,196,81,0.55)] ring-4 ring-white/70 transition-transform duration-200 group-hover:scale-110 sm:h-24 sm:w-24">
+          <Play size={36} className="ml-1 text-ink-950" fill="currentColor" strokeWidth={0} />
+        </span>
+        <span className="mt-3 rounded-full border border-white/25 bg-black/70 px-4 py-1.5 text-sm font-semibold tracking-wide text-white shadow-lg backdrop-blur transition-colors group-hover:border-gold-400 group-hover:text-gold-300">
+          Watch Trailer
+        </span>
       </button>
 
-      {/* YouTube Popup Modal - HIGHER Z-INDEX */}
-      {showPopup && (
-        <>
-          {/* Backdrop - HIGHEST Z-INDEX */}
-          <div 
-            className="fixed inset-0 z-99999 bg-black/95"
-            onClick={() => setShowPopup(false)}
-          />
-          
-          {/* Player container - EVEN HIGHER */}
-          <div 
-            ref={popupRef}
-            className="fixed inset-0 z-100000 flex items-center justify-center p-2 sm:p-4"
-          >
-            <div className="relative w-full max-w-3xl bg-black rounded overflow-hidden">
-              {/* Close button top right */}
-              <button
-                onClick={() => setShowPopup(false)}
-                className="absolute top-3 right-3 z-10 flex items-center justify-center w-10 h-10 text-white hover:bg-white/20 rounded-full transition-colors backdrop-blur-sm"
-                aria-label="Close"
-              >
-                <X size={24} />
-              </button>
-              
-              {/* YouTube iframe */}
-              <div className="relative pt-[56.25%]">
-                <iframe
-                  src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1&controls=1`}
-                  title={`${movieTitle} Trailer`}
-                  className="absolute top-0 left-0 w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  frameBorder="0"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                />
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+      <AuthRequiredModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        title="Login required to watch trailer"
+        message="Create a free account or login to watch the trailer."
+      />
+
+      {mounted && modal ? createPortal(modal, document.body) : null}
     </>
   )
 }
+
+export default TrailerPlayButton

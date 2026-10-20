@@ -1,79 +1,57 @@
-// components/LikeDislikeButtons.tsx - ENHANCED with better real-time updates
+// components/LikeDislikeButtons.tsx
+
+
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ThumbsUp, ThumbsDown } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { AuthRequiredModal } from './AuthRequiredModal'
 
-interface LikeDislikeButtonsProps {
+interface Props {
   postId: string
   userId?: string
-  onReactionChange?: (likes: number, dislikes: number) => void // Callback for parent component
+  onChange?: (likes: number, dislikes: number) => void
 }
 
-export function LikeDislikeButtons({ postId, userId, onReactionChange }: LikeDislikeButtonsProps) {
+export function LikeDislikeButtons({ postId, userId, onChange }: Props) {
   const [likes, setLikes] = useState(0)
   const [dislikes, setDislikes] = useState(0)
   const [userReaction, setUserReaction] = useState<'like' | 'dislike' | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [authModal, setAuthModal] = useState<'like' | 'dislike' | null>(null)
   const supabase = createClient()
-  const router = useRouter()
 
-  // Fetch initial data
   const fetchReactions = useCallback(async () => {
-    if (!postId) return
-    
-    try {
-      console.log('Fetching reactions for post:', postId)
-      
-      // Get counts
-      const { data: reactions, error } = await supabase
-        .from('post_reactions')
-        .select('reaction_type, user_id')
-        .eq('post_id', postId)
-      
-      if (error) {
-        console.error('Error fetching reactions:', error)
-        return
+    const { data } = await supabase
+      .from('post_reactions')
+      .select('reaction_type, user_id')
+      .eq('post_id', postId)
+
+    if (data) {
+      const likeCount = data.filter((r) => r.reaction_type === 'like').length
+      const dislikeCount = data.filter(
+        (r) => r.reaction_type === 'dislike'
+      ).length
+      setLikes(likeCount)
+      setDislikes(dislikeCount)
+      onChange?.(likeCount, dislikeCount)
+
+      if (userId) {
+        const mine = data.find((r) => r.user_id === userId)
+        setUserReaction(
+          (mine?.reaction_type as 'like' | 'dislike' | undefined) || null
+        )
       }
-      
-      if (reactions) {
-        const likeCount = reactions.filter(r => r.reaction_type === 'like').length
-        const dislikeCount = reactions.filter(r => r.reaction_type === 'dislike').length
-        
-        console.log('Fetched counts:', { likeCount, dislikeCount })
-        
-        setLikes(likeCount)
-        setDislikes(dislikeCount)
-        
-        // Notify parent component
-        if (onReactionChange) {
-          onReactionChange(likeCount, dislikeCount)
-        }
-        
-        // Get user's reaction if logged in
-        if (userId) {
-          const userReaction = reactions.find(r => r.user_id === userId)
-          setUserReaction(userReaction?.reaction_type || null)
-        }
-      }
-    } catch (error) {
-      console.error('Error in fetchReactions:', error)
     }
-  }, [postId, userId, onReactionChange, supabase])
+  }, [postId, userId, onChange, supabase])
 
-  // Set up real-time subscription
   useEffect(() => {
-    if (!postId || isSubscribed) return
-
-    console.log('Setting up real-time subscription for post:', postId)
-    
-    // Fetch initial data
     fetchReactions()
+  }, [fetchReactions])
 
-    // Subscribe to real-time changes
+  // Real-time subscription
+  useEffect(() => {
     const channel = supabase
       .channel(`post-reactions-${postId}`)
       .on(
@@ -82,136 +60,101 @@ export function LikeDislikeButtons({ postId, userId, onReactionChange }: LikeDis
           event: '*',
           schema: 'public',
           table: 'post_reactions',
-          filter: `post_id=eq.${postId}`
+          filter: `post_id=eq.${postId}`,
         },
-        async (payload) => {
-          console.log('Real-time reaction change detected:', payload)
-          
-          // Refetch all reactions to get accurate counts
-          await fetchReactions()
+        () => {
+          fetchReactions()
         }
       )
-      .subscribe((status) => {
-        console.log('Subscription status:', status)
-        if (status === 'SUBSCRIBED') {
-          setIsSubscribed(true)
-        }
-      })
-
-    // Cleanup subscription
+      .subscribe()
     return () => {
-      console.log('Cleaning up subscription for post:', postId)
       supabase.removeChannel(channel)
-      setIsSubscribed(false)
     }
-  }, [postId, supabase, fetchReactions, isSubscribed])
+  }, [postId, supabase, fetchReactions])
 
-  const handleReaction = async (reactionType: 'like' | 'dislike') => {
+  const handle = async (type: 'like' | 'dislike') => {
     if (!userId) {
-      // Redirect to login
-      const currentPath = window.location.pathname
-      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`)
+      setAuthModal(type)
       return
     }
-
-    setIsLoading(true)
-    console.log('Handling reaction:', { reactionType, userId, postId })
-
+    setLoading(true)
     try {
-      // Check if user already has a reaction
-      const { data: existingReaction, error: checkError } = await supabase
+      const { data: existing } = await supabase
         .from('post_reactions')
         .select('reaction_type')
         .eq('post_id', postId)
         .eq('user_id', userId)
         .maybeSingle()
 
-      if (checkError) {
-        console.error('Error checking existing reaction:', checkError)
-        throw checkError
-      }
-
-      let result
-      
-      if (existingReaction) {
-        if (existingReaction.reaction_type === reactionType) {
-          // Remove reaction
-          console.log('Removing reaction')
-          result = await supabase
+      if (existing) {
+        if (existing.reaction_type === type) {
+          await supabase
             .from('post_reactions')
             .delete()
             .eq('post_id', postId)
             .eq('user_id', userId)
         } else {
-          // Update reaction
-          console.log('Updating reaction from', existingReaction.reaction_type, 'to', reactionType)
-          result = await supabase
+          await supabase
             .from('post_reactions')
-            .update({ reaction_type: reactionType })
+            .update({ reaction_type: type })
             .eq('post_id', postId)
             .eq('user_id', userId)
         }
       } else {
-        // Add new reaction
-        console.log('Adding new reaction')
-        result = await supabase
-          .from('post_reactions')
-          .insert({
-            post_id: postId,
-            user_id: userId,
-            reaction_type: reactionType
-          })
+        await supabase.from('post_reactions').insert({
+          post_id: postId,
+          user_id: userId,
+          reaction_type: type,
+        })
       }
-
-      if (result.error) {
-        console.error('Error in reaction operation:', result.error)
-        throw result.error
-      }
-
-      console.log('Reaction operation successful')
-      
-      // The real-time subscription will trigger fetchReactions automatically
-      // But we can also update locally for immediate feedback
-      setUserReaction(
-        existingReaction?.reaction_type === reactionType ? null : reactionType
-      )
-
-    } catch (error) {
-      console.error('Error updating reaction:', error)
+      // Optimistic local update — realtime will also fire and re-sync
+      await fetchReactions()
+    } catch (err) {
+      console.error(err)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <button
-        onClick={() => handleReaction('like')}
-        disabled={isLoading}
-        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all ${
-          userReaction === 'like'
-            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border border-green-300 dark:border-green-700'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-        }`}
-        aria-label="Like"
-      >
-        <ThumbsUp size={16} className={userReaction === 'like' ? 'fill-current' : ''} />
-        <span className="text-sm font-medium">{likes}</span>
-      </button>
-      
-      <button
-        onClick={() => handleReaction('dislike')}
-        disabled={isLoading}
-        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition-all ${
-          userReaction === 'dislike'
-            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-300 dark:border-red-700'
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-        }`}
-        aria-label="Dislike"
-      >
-        <ThumbsDown size={16} className={userReaction === 'dislike' ? 'fill-current' : ''} />
-        <span className="text-sm font-medium">{dislikes}</span>
-      </button>
-    </div>
+    <>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handle('like')}
+          disabled={loading}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition ${
+            userReaction === 'like'
+              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+              : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+          }`}
+        >
+          <ThumbsUp size={16} />
+          <span className="text-sm">{likes}</span>
+        </button>
+        <button
+          onClick={() => handle('dislike')}
+          disabled={loading}
+          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg transition ${
+            userReaction === 'dislike'
+              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+          }`}
+        >
+          <ThumbsDown size={16} />
+          <span className="text-sm">{dislikes}</span>
+        </button>
+      </div>
+
+      <AuthRequiredModal
+        isOpen={!!authModal}
+        onClose={() => setAuthModal(null)}
+        title={
+          authModal === 'dislike'
+            ? 'Login required to dislike'
+            : 'Login required to like'
+        }
+        message="Create a free account or login to react to this review."
+      />
+    </>
   )
 }

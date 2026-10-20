@@ -1,4 +1,3 @@
-// app/dashboard/layout.tsx - Clean dark sidebar design
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -7,356 +6,198 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { 
-  BarChart3, 
-  FileText, 
-  Bookmark, 
-  PlusCircle,
-  Home,
-  Menu,
-  X,
-  ChevronRight,
-  Settings,
-  LogOut
+  BarChart3, FileText, Bookmark, PlusCircle, Home, 
+  Menu, X, Settings, LogOut, ChevronRight, MessageSquare
 } from 'lucide-react'
 
-interface UserProfile {
-  id: string
-  name: string
-  avatar_url: string | null
-  email: string
-}
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [profile, setProfile] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobile, setMobile] = useState(false)
   const [bookmarkCount, setBookmarkCount] = useState(0)
-  
+
   const supabase = createClient()
   const router = useRouter()
   const pathname = usePathname()
 
-  // Check if mobile view
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = window.innerWidth < 768
-      setIsMobile(mobile)
-      if (!mobile) {
-        setIsSidebarOpen(true)
-      } else {
-        setIsSidebarOpen(false)
-      }
+    const check = () => {
+      const m = window.innerWidth < 768
+      setMobile(m)
+      setSidebarOpen(!m)
     }
-    
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
   useEffect(() => {
-    fetchUser()
-  }, [])
-
-  useEffect(() => {
-    if (user) {
-      fetchBookmarkCount()
-    }
-  }, [user])
-
-  const fetchUser = async () => {
-    try {
-      setIsLoading(true)
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) { router.push('/login'); return }
       
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      setUser(session.user)
       
-      if (userError || !user) {
-        router.push('/login')
-        return
-      }
-
-      setUser(user)
-
-      const { data: profileData } = await supabase
+      const { data: p } = await supabase
         .from('profiles')
-        .select('id, name, avatar_url, email')
-        .eq('id', user.id)
-        .single()
-
-      setProfile(profileData)
-
-    } catch (error) {
-      console.error('Error fetching user:', error)
-      router.push('/login')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const fetchBookmarkCount = async () => {
-    try {
+        .select('name, avatar_url, email')
+        .eq('id', session.user.id)
+        .maybeSingle()
+      
+      setProfile(p)
+      
       const { count } = await supabase
         .from('bookmarks')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-      
+        .eq('user_id', session.user.id)
+        
       setBookmarkCount(count || 0)
-    } catch (error) {
-      console.error('Error fetching bookmark count:', error)
+      setLoading(false)
     }
-  }
+    load()
+  }, [router, supabase])
 
-  const handleLogout = async () => {
+  const logout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+    router.refresh()
   }
 
-  const handleNewPost = () => {
-    router.push('/dashboard/new-post')
-    if (isMobile) setIsSidebarOpen(false)
-  }
-
-  const handleNavigation = (path: string) => {
-    router.push(path)
-    if (isMobile) setIsSidebarOpen(false)
-  }
-
-  const sidebarItems = [
-    { 
-      id: 'overview', 
-      label: 'Overview', 
-      icon: <BarChart3 className="w-5 h-5" />, 
-      path: '/dashboard' 
-    },
-    { 
-      id: 'new', 
-      label: 'New Post', 
-      icon: <PlusCircle className="w-5 h-5" />, 
-      path: '/dashboard/new-post', 
-      action: handleNewPost 
-    },
-    { 
-      id: 'posts', 
-      label: 'My Posts', 
-      icon: <FileText className="w-5 h-5" />, 
-      path: '/dashboard/posts' 
-    },
-    { 
-      id: 'reading-list', 
-      label: 'Reading List', 
-      icon: <Bookmark className="w-5 h-5" />, 
-      path: '/dashboard/reading-list',
-      badge: bookmarkCount > 0 ? bookmarkCount : undefined
-    },
-    { 
-      id: 'settings', 
-      label: 'Settings', 
-      icon: <Settings className="w-5 h-5" />, 
-      path: '/dashboard/settings' 
-    },
+  const items = [
+    { href: '/dashboard', label: 'Overview', icon: <BarChart3 size={18} /> },
+    { href: '/dashboard/new-post', label: 'New Post', icon: <PlusCircle size={18} /> },
+    { href: '/dashboard/posts', label: 'My Posts', icon: <FileText size={18} /> },
+    { href: '/dashboard/reading-list', label: 'Reading List', icon: <Bookmark size={18} />, badge: bookmarkCount > 0 ? bookmarkCount : undefined },
+    { href: '/dashboard/messages', label: 'Messages', icon: <MessageSquare size={18} /> },
+    { href: '/dashboard/settings', label: 'Settings', icon: <Settings size={18} /> },
   ]
 
-  const getActiveSection = () => {
-    return sidebarItems.find(item => item.path === pathname)?.id || 'overview'
-  }
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-purple-600 animate-pulse"></div>
-          <div className="text-gray-400">Loading dashboard...</div>
-        </div>
+      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-ink-950">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gold-400 border-t-transparent" />
       </div>
     )
   }
 
-  return (
-    <>
-      <div className="min-h-screen flex bg-gray-900">
-        {/* Sidebar */}
-        <aside className={`
-          dashboard-sidebar
-          ${isMobile 
-            ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 w-72
-               ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-            : `fixed z-30 transition-all duration-300
-               ${isSidebarOpen ? 'w-64' : 'w-20'}`
-          }
-          bg-gray-800
-          flex flex-col overflow-hidden
-          shadow-xl
-        `}>
-          {/* Header */}
-          <div className={`
-            flex items-center h-16 shrink-0
-            ${!isMobile && !isSidebarOpen ? 'justify-center px-2' : 'justify-between px-4'}
-          `}>
-            {(!isMobile && isSidebarOpen) && (
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
-                  <Home className="w-4 h-4 text-white" />
-                </div>
-                <span className="font-semibold text-white">Dashboard</span>
-              </div>
-            )}
-            
-            {!isMobile && (
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <Menu className="w-5 h-5 text-gray-400" />
-              </button>
-            )}
-            
-            {isMobile && (
-              <button
-                onClick={() => setIsSidebarOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-700 transition-colors ml-auto"
-              >
-                <X className="w-5 h-5 text-gray-400" />
-              </button>
-            )}
-          </div>
+  const expanded = mobile || sidebarOpen
+  const currentLabel = items.find(i => i.href === pathname)?.label || 'Overview'
 
-          {/* User Profile */}
-          {(!isMobile && isSidebarOpen) || isMobile ? (
-            <div className="mx-3 mb-4 p-3 rounded-xl bg-gray-700/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden shrink-0 bg-purple-600 flex items-center justify-center">
-                  {profile?.avatar_url ? (
-                    <Image
-                      src={profile.avatar_url}
-                      alt={profile.name}
-                      width={40}
-                      height={40}
-                      className="object-cover"
-                    />
-                  ) : (
-                    <span className="text-white font-semibold">
-                      {profile?.name?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate text-sm">
-                    {profile?.name || 'User'}
-                  </p>
-                  <p className="text-gray-400 text-xs truncate">
-                    {profile?.email || 'user@example.com'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="py-3 flex justify-center">
-              <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center cursor-pointer"
-                   onClick={() => setIsSidebarOpen(true)}>
-                <span className="text-white font-semibold">
-                  {profile?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
+  return (
+    <div className="flex min-h-[calc(100vh-4rem)] bg-ink-950">
+      {/* ---------- Sidebar ---------- */}
+      <aside
+        className={`
+          ${mobile
+            ? `fixed inset-y-0 left-0 z-50 w-72 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+            : `sticky top-16 z-30 h-[calc(100vh-4rem)] shrink-0 transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-20'}`
+          }
+          flex flex-col border-r border-white/10 bg-ink-900
+        `}
+      >
+        <div className={`flex h-16 shrink-0 items-center ${!expanded ? 'justify-center' : 'justify-between px-4'}`}>
+          {expanded && (
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-400 text-ink-950">
+                <Home size={16} />
+              </span>
+              <span className="mb-display font-semibold text-white">Dashboard</span>
             </div>
           )}
-
-          {/* Navigation */}
-          <div className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-            {sidebarItems.map((item) => {
-              const isActive = getActiveSection() === item.id
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    if (item.action) {
-                      item.action()
-                    } else {
-                      handleNavigation(item.path)
-                    }
-                  }}
-                  className={`
-                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
-                    ${isActive
-                      ? 'bg-purple-600 text-white'
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                    }
-                    ${!isMobile && !isSidebarOpen ? 'justify-center' : ''}
-                  `}
-                  title={!isMobile && !isSidebarOpen ? item.label : undefined}
-                >
-                  {item.icon}
-                  {((!isMobile && isSidebarOpen) || isMobile) && (
-                    <div className="flex items-center justify-between flex-1">
-                      <span className="text-sm font-medium">{item.label}</span>
-                      {item.badge && (
-                        <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded-full">
-                          {item.badge}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </button>
-              )
-            })}
-            
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200
-                text-red-400 hover:text-white hover:bg-red-500/20 mt-4
-                ${!isMobile && !isSidebarOpen ? 'justify-center' : ''}
-              `}
-              title={!isMobile && !isSidebarOpen ? "Logout" : undefined}
-            >
-              <LogOut className="w-5 h-5" />
-              {((!isMobile && isSidebarOpen) || isMobile) && (
-                <span className="text-sm font-medium">Logout</span>
-              )}
+          {!mobile && (
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Toggle sidebar" className="rounded-lg p-2 text-gray-400 transition hover:bg-white/10 hover:text-white">
+              <Menu size={20} />
             </button>
-          </div>
-        </aside>
+          )}
+          {mobile && (
+            <button onClick={() => setSidebarOpen(false)} aria-label="Close sidebar" className="ml-auto rounded-lg p-2 text-gray-400 transition hover:bg-white/10 hover:text-white">
+              <X size={20} />
+            </button>
+          )}
+        </div>
 
-        {/* Mobile Overlay */}
-        {isMobile && isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black/50 z-40"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+        {expanded && (
+          <div className="mx-3 mb-4 flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gold-500 ring-2 ring-white/10">
+              {profile?.avatar_url ? (
+                <Image src={profile.avatar_url} alt={profile.name || 'Avatar'} width={40} height={40} className="h-full w-full object-cover" />
+              ) : (
+                <span className="font-bold text-ink-950">{profile?.name?.charAt(0).toUpperCase() || 'U'}</span>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-white">{profile?.name}</p>
+              <p className="truncate text-xs text-gray-500">{profile?.email}</p>
+            </div>
+          </div>
         )}
 
-        {/* Main Content */}
-        <main className={`
-          flex-1 overflow-y-auto min-h-screen
-          transition-all duration-300
-          ${!isMobile && isSidebarOpen ? 'ml-64' : !isMobile && !isSidebarOpen ? 'ml-20' : 'ml-0'}
-        `}>
-          {/* Breadcrumb */}
-          <div className="px-6 py-3 border-b border-gray-800 bg-gray-900">
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <Link href="/dashboard" className="hover:text-purple-400 transition">
-                Dashboard
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+          {items.map(item => {
+            const active = pathname === item.href
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.label}
+                onClick={() => mobile && setSidebarOpen(false)}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition ${
+                  active
+                    ? 'bg-gold-400 text-ink-950 shadow-[0_8px_24px_-12px_rgba(245,196,81,0.6)]'
+                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                } ${!expanded ? 'justify-center' : ''}`}
+              >
+                {item.icon}
+                {expanded && (
+                  <div className="flex flex-1 items-center justify-between">
+                    <span className="text-sm font-medium">{item.label}</span>
+                    {item.badge && (
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${active ? 'bg-ink-950/20 text-ink-950' : 'bg-gold-400/15 text-gold-300'}`}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </div>
+                )}
               </Link>
-              <ChevronRight className="w-4 h-4" />
-              <span className="text-white">
-                {sidebarItems.find(item => item.path === pathname)?.label || 'Overview'}
-              </span>
-            </div>
+            )
+          })}
+        </nav>
+
+        <div className="shrink-0 border-t border-white/10 p-3">
+          <button
+            onClick={logout}
+            title="Logout"
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-red-300 transition hover:bg-crimson-500/10 ${!expanded ? 'justify-center' : ''}`}
+          >
+            <LogOut size={18} />
+            {expanded && <span className="text-sm font-medium">Logout</span>}
+          </button>
+        </div>
+      </aside>
+
+      {mobile && sidebarOpen && <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />}
+
+      {/* ---------- Main ---------- */}
+      <main className="flex min-w-0 flex-1 flex-col">
+        <div className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-ink-950/80 px-4 py-3 backdrop-blur sm:px-6">
+          {mobile && (
+            <button onClick={() => setSidebarOpen(true)} aria-label="Open sidebar" className="rounded-lg p-2 text-gray-300 transition hover:bg-white/10">
+              <Menu size={20} />
+            </button>
+          )}
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <Link href="/dashboard" className="transition hover:text-gold-400">Dashboard</Link>
+            <ChevronRight size={14} />
+            <span className="font-medium text-white">{currentLabel}</span>
           </div>
-          
-          {/* Content */}
-          <div className="p-6">
-            <div className="bg-gray-800 rounded-xl border border-gray-700 p-6">
-              {children}
-            </div>
-          </div>
-        </main>
-      </div>
-    </>
+        </div>
+
+        <div className="flex-1 p-4 sm:p-6">
+          <div className="mb-surface p-5 sm:p-8">{children}</div>
+        </div>
+      </main>
+    </div>
   )
 }

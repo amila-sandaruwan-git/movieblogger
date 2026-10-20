@@ -1,39 +1,44 @@
-// app/post/[id]/page.tsx - UNIFIED FRAME VERSION WITH FULL REVIEW POPUP (FIXED)
 'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { ClientProfileDropdown } from '@/components/ClientProfileDropdown'
 import { BookmarkButton } from '@/components/BookmarkButton'
 import { LikeDislikeButtons } from '@/components/LikeDislikeButtons'
-import { ReportButton } from '@/components/ReportButton'
 import { CommentsSection } from '@/components/CommentsSection'
-import { ShareButtons } from '@/components/ShareButtons'
-import { ViewCount } from '@/components/ViewCount'
 import { AuthorProfileModal } from '@/components/AuthorProfileModal'
 import { FollowButton } from '@/components/FollowButton'
-import { FullReviewPopup } from '@/components/FullReviewPopup'
-import { Suspense } from 'react'
-import AuthorAvatar from '@/components/AuthorAvatar'
-import TrailerPlayButton from '@/components/TrailerPlayButton'
-import { Home, ChevronRight, Eye, User, Users, Calendar, MessageCircle, Quote, Play, Star, Film, Clock, Languages, Maximize2 } from 'lucide-react'
-import { 
-  formatDuration, 
+import { TrailerPlayButton } from '@/components/TrailerPlayButton'
+import { ReportButton } from '@/components/ReportButton' // <--- IMPORTED HERE
+import {
+  Home,
+  ChevronRight,
+  Eye,
+  User,
+  Users,
+  Calendar,
+  MessageCircle,
+  Quote,
+  Film,
+  Clock,
+  Languages,
+  Star,
+  AlertCircle,
+} from 'lucide-react'
+import {
+  formatDuration,
   formatDate,
   formatShortDate,
-  formatNumber
+  formatNumber,
 } from '@/utils/helpers'
 
-// Dynamically import components
-const PostContent = dynamic(() => import('@/components/PostContent'), {
-  loading: () => <div className="animate-pulse h-96 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-})
-
-const RelatedPostsClient = dynamic(() => import('@/components/RelatedPostsClient'), {
-  loading: () => <div className="animate-pulse h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
+const AuthorAvatar = dynamic(() => import('@/components/AuthorAvatar'), {
+  ssr: false,
+  loading: () => (
+    <div className="mb-skeleton h-20 w-20 !rounded-full" />
+  ),
 })
 
 interface Post {
@@ -63,8 +68,6 @@ interface Post {
   tmdb_id: number | null
   movie_language: string | null
   view_count: number
-  rating: number | null
-  rating_scale: '5' | '10' | null
 }
 
 interface UserProfile {
@@ -72,11 +75,8 @@ interface UserProfile {
   name: string
   avatar_url: string | null
   bio?: string | null
-  follower_count?: number
-  following_count?: number
 }
 
-// Extended user interface for current user
 interface ExtendedUser {
   id: string
   email?: string
@@ -95,7 +95,11 @@ export default function PostPage({ params }: PostPageProps) {
   const [postId, setPostId] = useState<string>('')
   const [post, setPost] = useState<Post | null>(null)
   const [authorProfile, setAuthorProfile] = useState<UserProfile | null>(null)
-  const [authorStats, setAuthorStats] = useState({ totalPosts: 0, totalFollowers: 0, totalFollowing: 0 })
+  const [authorStats, setAuthorStats] = useState({
+    totalPosts: 0,
+    totalFollowers: 0,
+    totalFollowing: 0,
+  })
   const [authorPosts, setAuthorPosts] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -104,39 +108,40 @@ export default function PostPage({ params }: PostPageProps) {
   const [viewCount, setViewCount] = useState(0)
   const [isParamsLoaded, setIsParamsLoaded] = useState(false)
   const [commentCount, setCommentCount] = useState(0)
-  const [isFullReviewOpen, setIsFullReviewOpen] = useState(false)
+  const [reactionCounts, setReactionCounts] = useState({
+    likes: 0,
+    dislikes: 0,
+  })
 
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const highlightedCommentId = searchParams.get('comment') || null
 
-  // Unwrap params promise
   useEffect(() => {
     const unwrapParams = async () => {
       try {
         const unwrappedParams = await params
         setPostId(unwrappedParams.id)
         setIsParamsLoaded(true)
-      } catch (error) {
-        console.error('Error unwrapping params:', error)
+      } catch {
         setError('Failed to load post parameters')
         setIsLoading(false)
       }
     }
-    
     unwrapParams()
   }, [params])
 
-  // Fetch all data when params are loaded
   useEffect(() => {
     if (isParamsLoaded && postId) {
       fetchAllData()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isParamsLoaded, postId])
 
-  // Real-time updates for follower counts
+  // Real-time follower count
   useEffect(() => {
     if (!authorProfile?.id) return
-
     const channel = supabase
       .channel(`author-follows-${authorProfile.id}`)
       .on(
@@ -145,7 +150,7 @@ export default function PostPage({ params }: PostPageProps) {
           event: '*',
           schema: 'public',
           table: 'follows',
-          filter: `following_id=eq.${authorProfile.id}`
+          filter: `following_id=eq.${authorProfile.id}`,
         },
         async () => {
           const stats = await getAuthorStats(authorProfile.id)
@@ -153,16 +158,15 @@ export default function PostPage({ params }: PostPageProps) {
         }
       )
       .subscribe()
-
     return () => {
       supabase.removeChannel(channel)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authorProfile?.id])
 
-  // Real-time subscription for comment count
+  // Real-time comment count
   useEffect(() => {
     if (!postId) return
-
     const channel = supabase
       .channel(`comment-count-${postId}`)
       .on(
@@ -171,44 +175,61 @@ export default function PostPage({ params }: PostPageProps) {
           event: '*',
           schema: 'public',
           table: 'comments',
-          filter: `post_id=eq.${postId}`
+          filter: `post_id=eq.${postId}`,
         },
         async () => {
           const { count } = await supabase
             .from('comments')
             .select('*', { count: 'exact', head: true })
             .eq('post_id', postId)
-          
-          if (count !== null) {
-            setCommentCount(count)
-          }
+          if (count !== null) setCommentCount(count)
         }
       )
       .subscribe()
-
     return () => {
       supabase.removeChannel(channel)
     }
   }, [postId, supabase])
 
-  // Fetch view count directly from post_views table (same method as homepage)
-  const fetchViewCount = async (postId: string) => {
-    try {
-      const { data: viewsData, error } = await supabase
-        .from('post_views')
-        .select('post_id')
-        .eq('post_id', parseInt(postId))
-      
-      if (error) {
-        console.error('Error fetching view count:', error)
-        return 0
-      }
-      
-      return viewsData?.length || 0
-    } catch (error) {
-      console.error('Error fetching view count:', error)
-      return 0
+  // Real-time reaction counts
+  useEffect(() => {
+    if (!postId) return
+    const channel = supabase
+      .channel(`parent-reactions-${postId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'post_reactions',
+          filter: `post_id=eq.${postId}`,
+        },
+        async () => {
+          const { data } = await supabase
+            .from('post_reactions')
+            .select('reaction_type')
+            .eq('post_id', postId)
+          if (data) {
+            setReactionCounts({
+              likes: data.filter((r) => r.reaction_type === 'like').length,
+              dislikes: data.filter((r) => r.reaction_type === 'dislike')
+                .length,
+            })
+          }
+        }
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
     }
+  }, [postId, supabase])
+
+  const fetchViewCount = async (id: string) => {
+    const { data } = await supabase
+      .from('post_views')
+      .select('post_id')
+      .eq('post_id', parseInt(id))
+    return data?.length || 0
   }
 
   const fetchAllData = async () => {
@@ -217,31 +238,32 @@ export default function PostPage({ params }: PostPageProps) {
       setIsLoading(false)
       return
     }
-    
     setIsLoading(true)
     setError(null)
-    
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) console.error('Auth error:', userError)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const user = session?.user || null
 
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
           .select('name, avatar_url')
           .eq('id', user.id)
-          .single()
-        
-        const extendedUser: ExtendedUser = {
+          .maybeSingle()
+        setCurrentUser({
           id: user.id,
           email: user.email,
           user_metadata: {
-            name: profile?.name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url
-          }
-        }
-        
-        setCurrentUser(extendedUser)
+            name:
+              profile?.name ||
+              user.user_metadata?.name ||
+              user.email?.split('@')[0] ||
+              'User',
+            avatar_url: profile?.avatar_url || user.user_metadata?.avatar_url,
+          },
+        })
       } else {
         setCurrentUser(null)
       }
@@ -252,27 +274,18 @@ export default function PostPage({ params }: PostPageProps) {
         .eq('id', postId)
         .single()
 
-      if (postError) {
-        console.error('Post fetch error:', postError)
+      if (postError || !postData) {
         setError('Unable to load post. Please try again.')
         setIsLoading(false)
         return
       }
-
-      if (!postData) {
-        setError('Post data is empty')
-        setIsLoading(false)
-        return
-      }
-
       if (postData.status !== 'published' || postData.visibility !== 'public') {
-        setError(`This post is ${postData.status} and ${postData.visibility}. Only published/public posts are accessible.`)
+        setError('This post is not available.')
         setIsLoading(false)
         return
       }
-
       setPost(postData as Post)
-      
+
       const actualViewCount = await fetchViewCount(postId)
       setViewCount(actualViewCount)
 
@@ -280,40 +293,35 @@ export default function PostPage({ params }: PostPageProps) {
         .from('comments')
         .select('*', { count: 'exact', head: true })
         .eq('post_id', postId)
-      
       setCommentCount(count || 0)
 
-      const { data: authorProfileData, error: authorError } = await supabase
+      const { data: reactionsData } = await supabase
+        .from('post_reactions')
+        .select('reaction_type')
+        .eq('post_id', postId)
+      if (reactionsData) {
+        setReactionCounts({
+          likes: reactionsData.filter((r) => r.reaction_type === 'like')
+            .length,
+          dislikes: reactionsData.filter(
+            (r) => r.reaction_type === 'dislike'
+          ).length,
+        })
+      }
+
+      const { data: authorData } = await supabase
         .from('profiles')
-        .select('id, name, avatar_url, bio, follower_count, following_count')
+        .select('id, name, avatar_url, bio')
         .eq('id', postData.user_id)
         .maybeSingle()
-
-      if (authorError) {
-        console.error('Error fetching author profile:', authorError)
-      }
-
-      if (authorProfileData) {
-        setAuthorProfile(authorProfileData as UserProfile)
-      } else {
-        const { data: userData } = await supabase.auth.getUser()
-        
-        if (userData?.user && userData.user.id === postData.user_id) {
-          setAuthorProfile({
-            id: postData.user_id,
-            name: userData.user.user_metadata?.name || userData.user.email?.split('@')[0] || 'User',
-            avatar_url: userData.user.user_metadata?.avatar_url || null,
-            bio: null
-          })
-        } else {
-          setAuthorProfile({
-            id: postData.user_id,
-            name: 'Movie Reviewer',
-            avatar_url: null,
-            bio: null
-          })
+      setAuthorProfile(
+        authorData || {
+          id: postData.user_id,
+          name: 'Movie Reviewer',
+          avatar_url: null,
+          bio: null,
         }
-      }
+      )
 
       const stats = await getAuthorStats(postData.user_id)
       setAuthorStats(stats)
@@ -327,13 +335,11 @@ export default function PostPage({ params }: PostPageProps) {
         .neq('id', postId)
         .order('published_at', { ascending: false })
         .limit(5)
-
       setAuthorPosts(authorPostsData || [])
-      await trackView(postId)
 
-    } catch (error: any) {
-      console.error('Error fetching data:', error)
-      setError(`Failed to load post: ${error.message}`)
+      await trackView(postId, user)
+    } catch (err: any) {
+      setError(`Failed to load post: ${err.message}`)
     } finally {
       setIsLoading(false)
     }
@@ -341,734 +347,447 @@ export default function PostPage({ params }: PostPageProps) {
 
   const getAuthorStats = async (authorId: string) => {
     try {
-      const { count: totalPosts } = await supabase
-        .from('posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', authorId)
-        .eq('status', 'published')
-        .eq('visibility', 'public')
-
-      const { count: totalFollowers } = await supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('following_id', authorId)
-
-      const { count: totalFollowing } = await supabase
-        .from('follows')
-        .select('*', { count: 'exact', head: true })
-        .eq('follower_id', authorId)
-
+      const [postsRes, followersRes, followingRes] = await Promise.all([
+        supabase
+          .from('posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', authorId)
+          .eq('status', 'published')
+          .eq('visibility', 'public'),
+        supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('following_id', authorId),
+        supabase
+          .from('follows')
+          .select('*', { count: 'exact', head: true })
+          .eq('follower_id', authorId),
+      ])
       return {
-        totalPosts: totalPosts || 0,
-        totalFollowers: totalFollowers || 0,
-        totalFollowing: totalFollowing || 0
+        totalPosts: postsRes.count || 0,
+        totalFollowers: followersRes.count || 0,
+        totalFollowing: followingRes.count || 0,
       }
-    } catch (error) {
-      console.error('Error getting author stats:', error)
-      return {
-        totalPosts: 0,
-        totalFollowers: 0,
-        totalFollowing: 0
-      }
+    } catch {
+      return { totalPosts: 0, totalFollowers: 0, totalFollowing: 0 }
     }
   }
 
-  const trackView = async (postId: string) => {
+  const trackView = async (id: string, user: any) => {
     try {
       let sessionId = sessionStorage.getItem('view_session_id')
       if (!sessionId) {
-        sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36)
+        sessionId =
+          Math.random().toString(36).substring(2) + Date.now().toString(36)
         sessionStorage.setItem('view_session_id', sessionId)
       }
-      
-      const viewedKey = `viewed_${postId}_${sessionId}`
-      if (typeof window !== 'undefined' && !sessionStorage.getItem(viewedKey)) {
-        
-        let ip = 'unknown'
-        try {
-          const ipResponse = await fetch('/api/client-ip')
-          if (ipResponse.ok) {
-            const ipData = await ipResponse.json()
-            ip = ipData.ip || 'unknown'
-          }
-        } catch (error) {
-          console.error('Failed to get IP:', error)
+      const viewedKey = `viewed_${id}_${sessionId}`
+      if (sessionStorage.getItem(viewedKey)) return
+      let ip = 'unknown'
+      try {
+        const ipResponse = await fetch('/api/client-ip')
+        if (ipResponse.ok) {
+          const ipData = await ipResponse.json()
+          ip = ipData.ip || 'unknown'
         }
-        
-        const viewData = {
-          post_id: parseInt(postId),
-          user_id: currentUser?.id || null,
-          user_email: currentUser?.email || null,
+      } catch {
+        /* ignore */
+      }
+      const { error } = await supabase.from('post_views').insert([
+        {
+          post_id: parseInt(id),
+          user_id: user?.id || null,
+          user_email: user?.email || null,
           ip_address: ip,
           user_agent: navigator.userAgent,
-          session_id: sessionId,
-          view_type: 'page_view'
-        }
-        
-        const { error } = await supabase
-          .from('post_views')
-          .insert([viewData])
-        
-        if (!error) {
-          const newViewCount = await fetchViewCount(postId)
-          setViewCount(newViewCount)
-          sessionStorage.setItem(viewedKey, 'true')
-          
-          setTimeout(() => {
-            sessionStorage.removeItem(viewedKey)
-          }, 24 * 60 * 60 * 1000)
-        }
+          session_key: sessionId,
+        },
+      ])
+      if (!error) {
+        const newCount = await fetchViewCount(id)
+        setViewCount(newCount)
+        sessionStorage.setItem(viewedKey, 'true')
+        setTimeout(
+          () => sessionStorage.removeItem(viewedKey),
+          24 * 60 * 60 * 1000
+        )
       }
-    } catch (error) {
-      console.error('Error tracking view:', error)
+    } catch {
+      /* ignore */
     }
   }
 
-  const handleCommentChange = (total: number) => {
-    setCommentCount(total)
-  }
-
-  const renderUserRating = () => {
-    if (!post?.rating) return null
-    
-    const rating = post.rating
-    const maxRating = post.rating_scale === '10' ? 10 : 5
-    const starCount = Math.round(rating)
-    
-    return (
-      <div className="mt-4 p-4 bg-yellow-50/50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200/50 dark:border-yellow-800/50">
-        <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">Reviewer's Rating</h4>
-        <div className="flex items-center space-x-2">
-          <div className="flex space-x-1">
-            {Array.from({ length: maxRating }).map((_, i) => (
-              <span
-                key={i}
-                className={`text-2xl ${i < starCount ? 'text-yellow-500' : 'text-gray-300 dark:text-gray-600'}`}
-              >
-                ★
-              </span>
-            ))}
-          </div>
-          <span className="text-xl font-bold text-yellow-700 dark:text-yellow-300">
-            {rating.toFixed(1)}/{maxRating}
-          </span>
-        </div>
-      </div>
-    )
-  }
-
-  const handleAuthorClick = () => {
-    setIsProfileModalOpen(true)
-  }
-
   const handleGenreClick = (genre: string) => {
-    const encodedGenre = encodeURIComponent(genre.trim())
-    router.push(`/reviews?genre=${encodedGenre}`)
+    router.push(`/reviews?genre=${encodeURIComponent(genre.trim())}`)
   }
 
-  if (!isParamsLoaded) {
+  /* ---------------- Loading ---------------- */
+  if (!isParamsLoaded || isLoading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-96 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-                <div className="h-96 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-                <div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-              </div>
-            </div>
+      <div className="min-h-screen bg-ink-950">
+        <div className="mb-skeleton h-[480px] !rounded-none" />
+        <div className="mb-container grid grid-cols-1 gap-8 py-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-6">
+            <div className="mb-skeleton h-20" />
+            <div className="mb-skeleton h-96" />
+          </div>
+          <div className="space-y-6">
+            <div className="mb-skeleton h-72" />
+            <div className="mb-skeleton h-56" />
           </div>
         </div>
       </div>
     )
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-96 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-                <div className="h-96 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-                <div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
+  /* ---------------- Error ---------------- */
   if (error || !post) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center px-4">
-        <div className="text-center max-w-2xl">
-          <div className="backdrop-blur-xl bg-white/10 dark:bg-gray-800/30 rounded-2xl p-8 border border-white/20">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Post Not Found</h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">{error || 'The post you are looking for does not exist.'}</p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-linear-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity"
-              >
-                <Home size={16} />
-                Back to Home
-              </Link>
-            </div>
+      <div className="flex min-h-[70vh] items-center justify-center bg-ink-950 px-4">
+        <div className="mb-surface max-w-md p-10 text-center">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-gold-400/10 text-gold-400">
+            <AlertCircle size={26} />
           </div>
+          <h1 className="mb-display text-2xl font-semibold text-white">Post not found</h1>
+          <p className="mb-7 mt-2 text-sm text-gray-400">
+            {error || 'The post you are looking for does not exist.'}
+          </p>
+          <Link href="/" className="mb-btn-primary">
+            <Home size={16} /> Back to Home
+          </Link>
         </div>
       </div>
     )
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const heroImage = post.movie_backdrop_url || post.movie_poster_url
+
+  const detailRows: { label: string; value: string }[] = [
+    post.director ? { label: 'Director', value: post.director } : null,
+    post.cast?.length > 0
+      ? {
+          label: 'Cast',
+          value:
+            post.cast.slice(0, 4).join(', ') +
+            (post.cast.length > 4 ? ` +${post.cast.length - 4} more` : ''),
+        }
+      : null,
+    post.movie_language ? { label: 'Language', value: post.movie_language } : null,
+    post.release_date
+      ? {
+          label: 'Release',
+          value: new Date(post.release_date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          }),
+        }
+      : null,
+  ].filter(Boolean) as { label: string; value: string }[]
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Breadcrumb Navigation - Glass Style */}
-      <div className="container mx-auto px-4 py-4">
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
-          <Link href="/" className="flex items-center hover:text-black dark:hover:text-white backdrop-blur-sm px-2 py-1 rounded-lg transition-colors">
-            <Home size={14} className="mr-1" />
-            Home
-          </Link>
-          <ChevronRight size={14} />
-          <Link href="/reviews" className="hover:text-black dark:hover:text-white backdrop-blur-sm px-2 py-1 rounded-lg transition-colors">
-            Reviews
-          </Link>
-          <ChevronRight size={14} />
-          <span className="text-gray-900 dark:text-white font-medium truncate backdrop-blur-sm px-2 py-1 rounded-lg">
-            {post.movie_title}
-          </span>
-        </nav>
-      </div>
+    <div className="min-h-screen bg-ink-950 text-white">
+      {/* ================= HERO ================= */}
+      <header className="relative isolate overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          {heroImage ? (
+            <img
+              src={heroImage}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+            />
+          ) : (
+            <div className="h-full w-full bg-gradient-to-br from-ink-700 via-ink-800 to-ink-950" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/70 to-ink-950/30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink-950/80 via-transparent to-transparent" />
+        </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 max-w-7xl">
-        {/* Hero Section with glass-style short description */}
-        <div className="relative rounded-2xl overflow-hidden mb-6 group shadow-2xl">
-          <div className="relative w-full h-125 md:h-137.5">
-            {post.movie_backdrop_url ? (
-              <img
-                src={post.movie_backdrop_url}
-                alt={post.movie_title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-              />
-            ) : post.movie_poster_url ? (
-              <img
-                src={post.movie_poster_url}
-                alt={post.movie_title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-              />
-            ) : (
-              <div className="w-full h-full bg-linear-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-8xl mb-4 text-white/50">🎬</div>
-                  <span className="text-white/70 text-xl">No image available</span>
-                </div>
-              </div>
-            )}
-            
-            {/* Gradient overlay for better text visibility */}
-            <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-transparent"></div>
-            <div className="absolute inset-0 bg-linear-to-r from-black/60 via-transparent to-transparent"></div>
-          </div>
-          
-          {/* Trailer button - fully clickable and visible */}
+        <div className="mb-container relative flex min-h-[460px] flex-col justify-between pb-10 pt-5 md:min-h-[540px]">
+          {/* Breadcrumb */}
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-gray-300">
+            <Link href="/" className="flex items-center gap-1 transition hover:text-white">
+              <Home size={13} /> Home
+            </Link>
+            <ChevronRight size={13} className="opacity-50" />
+            <Link href="/reviews" className="transition hover:text-white">Reviews</Link>
+            <ChevronRight size={13} className="opacity-50" />
+            <span className="max-w-[40vw] truncate font-medium text-white">{post.movie_title}</span>
+          </nav>
+
+          {/* Trailer button (centered) */}
           {post.trailer_url && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <TrailerPlayButton 
-                trailerUrl={post.trailer_url}
-                movieTitle={post.movie_title}
-              />
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <div className="pointer-events-auto">
+                <TrailerPlayButton
+                  trailerUrl={post.trailer_url}
+                  movieTitle={post.movie_title}
+                  isAuthenticated={!!currentUser}
+                />
+              </div>
             </div>
           )}
-          
-          {/* Banner content */}
-          <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 bg-linear-to-t from-black/80 via-transparent to-transparent">
-            <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between gap-6">
-              {/* Left side - Movie info */}
-              <div className="text-white lg:w-1/2">
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 tracking-tight text-white drop-shadow-lg">
-                  {post.movie_title}
-                </h1>
-                
-                {/* Movie metadata chips - Glass style */}
-                <div className="flex flex-wrap items-center gap-2 mb-4">
-                  {post.release_date && (
-                    <span className="backdrop-blur-md bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium border border-white/30">
-                      📅 {new Date(post.release_date).getFullYear()}
-                    </span>
-                  )}
-                  {post.duration > 0 && (
-                    <span className="backdrop-blur-md bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium border border-white/30">
-                      ⏱️ {formatDuration(post.duration)}
-                    </span>
-                  )}
-                  {post.review_language && (
-                    <span className="backdrop-blur-md bg-white/20 text-white px-4 py-2 rounded-full text-sm font-medium border border-white/30">
-                      ✍️ {post.review_language}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Genre tags - Glass style with guaranteed clickability */}
-                {post.genre_tags && post.genre_tags.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {post.genre_tags.map((genre, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => handleGenreClick(genre)}
-                        className="inline-flex items-center justify-center backdrop-blur-md bg-white/30 text-white px-4 py-2 rounded-full text-sm font-medium border-2 border-white/40 hover:bg-white/50 hover:scale-105 transition-all duration-200 cursor-pointer shadow-lg"
-                        style={{ 
-                          cursor: 'pointer',
-                          pointerEvents: 'auto',
-                        }}
-                      >
-                        <span className="relative">#{genre}</span>
-                      </button>
-                    ))}
-                  </div>
+
+          {/* Title block */}
+          <div className="mt-24 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
+            <div className="max-w-3xl">
+              <p className="mb-eyebrow mb-3">Review</p>
+              <h1 className="mb-display text-4xl font-semibold leading-[1.05] drop-shadow-lg sm:text-5xl lg:text-6xl">
+                {post.movie_title}
+              </h1>
+
+              <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
+                {post.tmdb_rating && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-gold-400 px-3 py-1.5 font-bold text-ink-950">
+                    <Star size={14} className="fill-ink-950" /> {post.tmdb_rating.toFixed(1)}
+                    <span className="text-xs font-semibold opacity-70">TMDB</span>
+                  </span>
+                )}
+                {post.release_date && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 backdrop-blur-md">
+                    <Calendar size={14} className="text-gold-400" /> {new Date(post.release_date).getFullYear()}
+                  </span>
+                )}
+                {post.duration > 0 && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 backdrop-blur-md">
+                    <Clock size={14} className="text-gold-400" /> {formatDuration(post.duration)}
+                  </span>
+                )}
+                {post.review_language && (
+                  <span className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 backdrop-blur-md">
+                    <Languages size={14} className="text-gold-400" /> {post.review_language}
+                  </span>
                 )}
               </div>
-              
-              {/* Right side - Glass-style short description */}
-              {post.excerpt && (
-                <div className="lg:w-1/2 lg:max-w-md w-full">
-                  <div className="backdrop-blur-xl bg-black/40 border-2 border-white/30 rounded-xl p-5 shadow-2xl">
-                    <div className="flex items-start gap-3 mb-3">
-                      <Quote className="text-white/90 w-5 h-5 shrink-0" />
-                      <h3 className="text-white/90 font-semibold text-sm uppercase tracking-wider">Short Description</h3>
-                    </div>
-                    <p className="text-white text-base leading-relaxed">
-                      {post.excerpt}
-                    </p>
-                  </div>
+
+              {post.genre_tags?.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {post.genre_tags.map((genre, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleGenreClick(genre)}
+                      className="mb-chip !bg-white/10 !text-white backdrop-blur-md"
+                    >
+                      #{genre}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
-          </div>
-          
-          {/* Ratings positioned at top right on banner - Glass style */}
-          <div className="absolute top-4 right-4 flex flex-col sm:flex-row gap-3" style={{ zIndex: 10 }}>
-            {post.rating && (
-              <div className="backdrop-blur-xl bg-black/40 border-2 border-white/30 rounded-xl p-3 text-center shadow-xl">
-                <div className="text-xs font-semibold text-white/90 mb-1 flex items-center justify-center gap-1">
-                  <Star size={12} className="text-yellow-300" /> Reviewer
-                </div>
-                <div className="text-xl font-bold text-white">
-                  {post.rating.toFixed(1)}/{post.rating_scale === '10' ? 10 : 5}
-                </div>
-              </div>
-            )}
-            
-            {post.tmdb_rating && (
-              <div className="backdrop-blur-xl bg-black/40 border-2 border-white/30 rounded-xl p-3 text-center shadow-xl">
-                <div className="text-xs font-semibold text-white/90 mb-1">
-                  TMDB
-                </div>
-                <div className="text-xl font-bold text-white">
-                  {post.tmdb_rating.toFixed(1)}/10
-                </div>
-              </div>
+
+            {post.excerpt && (
+              <figure className="w-full rounded-2xl border border-white/15 bg-black/40 p-5 backdrop-blur-xl lg:max-w-sm">
+                <Quote className="mb-2 h-5 w-5 text-gold-400" />
+                <p className="text-sm leading-relaxed text-gray-100">{post.excerpt}</p>
+              </figure>
             )}
           </div>
         </div>
+      </header>
 
-        {/* Published Date - Glass style */}
-        <div className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-400 border-b border-white/20 dark:border-white/10 pb-3">
-          <Calendar size={16} className="text-blue-500" />
-          <span className="text-sm font-medium">Published:</span>
-          <span className="text-sm text-gray-900 dark:text-white">{formatDate(post.published_at)}</span>
-        </div>
+      {/* ================= BODY ================= */}
+      <main className="mb-container py-10">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+          {/* ---------- Main column ---------- */}
+          <div className="min-w-0 space-y-8">
+            <article className="mb-surface overflow-hidden">
+              {/* Action bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 p-4 md:px-6">
+                <div className="flex flex-wrap items-center gap-4">
+                  <LikeDislikeButtons
+                    postId={postId}
+                    userId={currentUser?.id}
+                    onChange={(likes, dislikes) => setReactionCounts({ likes, dislikes })}
+                  />
+                  <BookmarkButton postId={postId} userId={currentUser?.id} />
+                  <div className="flex items-center gap-1.5 text-gray-400">
+                    <MessageCircle size={18} />
+                    <span className="text-sm font-medium">{commentCount}</span>
+                  </div>
+                  <ReportButton
+                    postId={postId}
+                    userId={currentUser?.id}
+                    isAuthenticated={!!currentUser}
+                  />
+                </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content - UNIFIED FRAME */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* SINGLE UNIFIED GLASS FRAME containing all content */}
-            <div className="backdrop-blur-xl bg-white/10 dark:bg-gray-800/30 rounded-xl shadow-sm border border-white/20 dark:border-white/10 overflow-hidden">
-              
-              {/* Action Bar Section */}
-              <div className="p-4 md:p-6 border-b border-white/20 dark:border-white/10">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <Suspense fallback={<div className="h-8 w-20 bg-white/20 dark:bg-gray-700/50 rounded animate-pulse"></div>}>
-                      <LikeDislikeButtons postId={postId} userId={currentUser?.id} />
-                    </Suspense>
-                    
-                    <Suspense fallback={<div className="h-8 w-8 bg-white/20 dark:bg-gray-700/50 rounded animate-pulse"></div>}>
-                      <BookmarkButton postId={postId} userId={currentUser?.id} />
-                    </Suspense>
-                    
-                    <ShareButtons 
-                      title={post.movie_title}
-                      url={`${siteUrl}/post/${postId}`}
-                    />
-                    
-                    {/* Expand Button - Opens Full Review Popup */}
-                    
-                    
-                    {/* Comment count display with real-time updates */}
-                    <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <MessageCircle size={18} />
-                      <span className="text-sm font-medium">{commentCount}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-4">
-                    {/* View Count - Same method as homepage (direct count from post_views) */}
-                    <div className="backdrop-blur-md bg-linear-to-r from-blue-500/20 to-purple-600/20 rounded-lg px-4 py-2 border border-white/20">
-                      <div className="flex items-center gap-2">
-                        <Eye className="w-4 h-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {formatNumber(viewCount)} view{viewCount !== 1 ? 's' : ''}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    {currentUser && (
-                      <ReportButton 
-                        postId={postId}
-                        userId={currentUser?.id}
-                        isAuthenticated={!!currentUser}
-                      />
-                    )}
-                  </div>
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-sm text-gray-300">
+                  <Eye className="h-4 w-4 text-gold-400" />
+                  {formatNumber(viewCount)} view{viewCount !== 1 ? 's' : ''}
                 </div>
               </div>
 
-              {/* Author Info Section */}
-              <div className="p-4 md:p-6 border-b border-white/20 dark:border-white/10">
+              {/* Author */}
+              <div className="border-b border-white/10 p-4 md:px-6 md:py-5">
                 <div className="flex items-start gap-4">
-                  {/* Publisher Avatar */}
                   <button
-                    onClick={handleAuthorClick}
-                    className="cursor-pointer hover:opacity-80 transition-opacity shrink-0 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white rounded-full"
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="shrink-0 rounded-full ring-2 ring-white/10 transition hover:ring-gold-400/60"
                     aria-label={`View ${authorProfile?.name || 'publisher'} profile`}
                   >
-                    <AuthorAvatar 
+                    <AuthorAvatar
                       src={authorProfile?.avatar_url}
                       name={authorProfile?.name || 'Movie Reviewer'}
                       size="lg"
                     />
                   </button>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-4 mb-4">
-                      <div className="flex items-center gap-3">
-                        {/* Publisher Name */}
-                        <button
-                          onClick={handleAuthorClick}
-                          className="font-semibold text-xl text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer text-left truncate block focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white rounded px-1"
-                          aria-label={`View ${authorProfile?.name || 'publisher'} profile`}
-                        >
-                          {authorProfile?.name || 'Movie Reviewer'}
-                        </button>
-                        
-                        {/* Follow Button */}
-                        {authorProfile && authorProfile.id !== currentUser?.id && (
-                          <FollowButton
-                            targetUserId={authorProfile.id}
-                            targetUserName={authorProfile.name}
-                            currentUserId={currentUser?.id}
-                            size="sm"
-                            showCount={false}
-                            onFollowChange={(isFollowing) => {
-                              setAuthorStats(prev => ({
-                                ...prev,
-                                totalFollowers: isFollowing 
-                                  ? prev.totalFollowers + 1 
-                                  : Math.max(0, prev.totalFollowers - 1)
-                              }))
-                            }}
-                          />
-                        )}
-                      </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <button
+                        onClick={() => setIsProfileModalOpen(true)}
+                        className="mb-display truncate text-left text-xl font-semibold text-white transition hover:text-gold-300"
+                      >
+                        {authorProfile?.name || 'Movie Reviewer'}
+                      </button>
+                      {authorProfile && authorProfile.id !== currentUser?.id && (
+                        <FollowButton
+                          targetUserId={authorProfile.id}
+                          targetUserName={authorProfile.name}
+                          currentUserId={currentUser?.id}
+                          size="sm"
+                          showCount={false}
+                          onFollowChange={(isFollowing) => {
+                            setAuthorStats((prev) => ({
+                              ...prev,
+                              totalFollowers: isFollowing
+                                ? prev.totalFollowers + 1
+                                : Math.max(0, prev.totalFollowers - 1),
+                            }))
+                          }}
+                        />
+                      )}
                     </div>
-                    
-                    {/* Stats Grid - WITHOUT BACKGROUND COLORS */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center rounded-lg p-2">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <User size={14} className="text-gray-500" />
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Posts
-                          </span>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {formatNumber(authorStats.totalPosts)}
-                        </div>
+
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                      <Calendar size={12} /> Published {formatDate(post.published_at)}
+                    </p>
+
+                    <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                      <div className="flex items-baseline gap-1.5">
+                        <dt className="sr-only">Posts</dt>
+                        <dd className="font-semibold text-white">{formatNumber(authorStats.totalPosts)}</dd>
+                        <span className="text-gray-500">posts</span>
                       </div>
-                      
-                      <div className="text-center rounded-lg p-2">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <Users size={14} className="text-gray-500" />
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Followers
-                          </span>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {formatNumber(authorStats.totalFollowers)}
-                        </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <dt className="sr-only">Followers</dt>
+                        <dd className="font-semibold text-white">{formatNumber(authorStats.totalFollowers)}</dd>
+                        <span className="text-gray-500">followers</span>
                       </div>
-                      
-                      <div className="text-center rounded-lg p-2">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <Users size={14} className="rotate-180" />
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                            Following
-                          </span>
-                        </div>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {formatNumber(authorStats.totalFollowing)}
-                        </div>
+                      <div className="flex items-baseline gap-1.5">
+                        <dt className="sr-only">Following</dt>
+                        <dd className="font-semibold text-white">{formatNumber(authorStats.totalFollowing)}</dd>
+                        <span className="text-gray-500">following</span>
                       </div>
-                    </div>
-                    
-                    {/* Publisher Bio */}
+                    </dl>
+
                     {authorProfile?.bio && (
-                      <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-2 mt-4">
-                        {authorProfile.bio}
-                      </p>
+                      <p className="mt-3 line-clamp-2 text-sm text-gray-400">{authorProfile.bio}</p>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Main Review Content Section - CLICKABLE to open full page popup */}
-              <div className="p-4 md:p-8">
-                <button
-                  onClick={() => setIsFullReviewOpen(true)}
-                  className="w-full text-left group"
-                >
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-red-500 transition-colors">
-                      Full Review: {post.movie_title}
-                    </h2>
-                    <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 group-hover:bg-red-500/20 transition-all duration-300 flex items-center justify-center">
-                      <Maximize2 size={18} className="text-gray-600 dark:text-gray-400 group-hover:text-red-500 transition-colors" />
-                    </div>
-                  </div>
-                </button>
-                
-                {renderUserRating()}
-
-                {/* Preview of the review (first 500 characters) - CLICKABLE */}
-                <div 
-                  className="mt-6 prose prose-lg max-w-none dark:prose-invert cursor-pointer"
-                  onClick={() => setIsFullReviewOpen(true)}
-                >
-                  <div dangerouslySetInnerHTML={{ 
-                    __html: post.content.length > 500 
-                      ? post.content.substring(0, 500) + '...' 
-                      : post.content 
-                  }} />
-                  {post.content.length > 500 && (
-                    <div className="mt-4 text-red-500 hover:text-red-600 font-medium flex items-center gap-2">
-                      Read full review
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Comments Section - Separate from main frame */}
-            {post.comments_enabled && (
-              <Suspense fallback={<div className="h-64 bg-white/10 dark:bg-gray-800/30 backdrop-blur-sm rounded-xl animate-pulse"></div>}>
-                <CommentsSection 
-                  postId={postId}
-                  userId={currentUser?.id}
-                  isAuthenticated={!!currentUser}
-                  postAuthorId={post.user_id}
-                  postAuthorName={authorProfile?.name}
-                  postTitle={post.movie_title}
-                  onCommentChange={handleCommentChange}
+              {/* Review content */}
+              <div className="p-5 md:p-10">
+                <p className="mb-eyebrow mb-2">Full review</p>
+                <h2 className="mb-display mb-8 text-3xl font-semibold text-white">
+                  {post.movie_title}
+                </h2>
+                <div
+                  className="mb-prose"
+                  dangerouslySetInnerHTML={{ __html: post.content }}
                 />
-              </Suspense>
+              </div>
+            </article>
+
+            {post.comments_enabled && (
+              <CommentsSection
+                postId={postId}
+                userId={currentUser?.id}
+                isAuthenticated={!!currentUser}
+                postAuthorId={post.user_id}
+                postAuthorName={authorProfile?.name}
+                postTitle={post.movie_title}
+                onCommentChange={setCommentCount}
+                highlightedCommentId={highlightedCommentId}
+              />
             )}
           </div>
 
-          {/* Sidebar - Glass style (kept separate for layout) */}
-          <div className="space-y-8">
-            {/* Movie Details Card - Glass style */}
-            <div className="backdrop-blur-xl bg-white/10 dark:bg-gray-800/30 rounded-xl p-6 shadow-sm border border-white/20 dark:border-white/10">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <Film size={18} className="text-blue-500" />
-                Movie Details
-              </h3>
-              <div className="space-y-4">
-                {post.director && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 min-w-24">Director:</span>
-                    <p className="font-medium text-gray-900 dark:text-white flex-1">{post.director}</p>
-                  </div>
-                )}
-                {post.cast && post.cast.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 min-w-24">Cast:</span>
-                    <p className="font-medium text-gray-900 dark:text-white flex-1">
-                      {post.cast.slice(0, 4).join(', ')}
-                      {post.cast.length > 4 && ` +${post.cast.length - 4} more`}
-                    </p>
-                  </div>
-                )}
-                {post.movie_language && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 min-w-24">Language:</span>
-                    <p className="font-medium text-gray-900 dark:text-white flex-1">{post.movie_language}</p>
-                  </div>
-                )}
-                {post.release_date && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-sm text-gray-600 dark:text-gray-400 min-w-24">Release Date:</span>
-                    <p className="font-medium text-gray-900 dark:text-white flex-1">
-                      {new Date(post.release_date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                )}
+          {/* ---------- Sidebar ---------- */}
+          <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
+            <div className="mb-surface overflow-hidden">
+              {post.movie_poster_url && (
+                <div className="relative hidden aspect-[2/3] max-h-80 w-full overflow-hidden sm:block lg:max-h-96">
+                  <img
+                    src={post.movie_poster_url}
+                    alt={`${post.movie_title} poster`}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink-800 via-transparent to-transparent" />
+                </div>
+              )}
+
+              <div className="p-6">
+                <h3 className="mb-display mb-4 flex items-center gap-2 text-lg font-semibold">
+                  <Film size={18} className="text-gold-400" /> Movie details
+                </h3>
+                <dl className="divide-y divide-white/10 text-sm">
+                  {detailRows.map((row) => (
+                    <div key={row.label} className="flex gap-4 py-3 first:pt-0 last:pb-0">
+                      <dt className="w-20 shrink-0 text-gray-500">{row.label}</dt>
+                      <dd className="flex-1 font-medium text-gray-100">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
             </div>
 
-            {/* Author's Other Reviews - Glass style */}
-            {authorPosts && authorPosts.length > 0 && (
-              <div className="backdrop-blur-xl bg-white/10 dark:bg-gray-800/30 rounded-xl p-6 shadow-sm border border-white/20 dark:border-white/10">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+            {authorPosts.length > 0 && (
+              <div className="mb-surface p-6">
+                <h3 className="mb-display mb-4 text-lg font-semibold">
                   More from {authorProfile?.name || 'Author'}
                 </h3>
                 <div className="space-y-4">
-                  {authorPosts.map((authorPost: any) => (
+                  {authorPosts.map((p: any) => (
                     <Link
-                      key={authorPost.id}
-                      href={`/post/${authorPost.id}`}
-                      className="flex items-center gap-3 group"
+                      key={p.id}
+                      href={`/post/${p.id}`}
+                      className="group flex items-center gap-3"
                     >
-                      {authorPost.movie_poster_url ? (
+                      {p.movie_poster_url ? (
                         <img
-                          src={authorPost.movie_poster_url}
-                          alt={authorPost.movie_title}
-                          className="w-12 h-16 object-cover rounded-lg group-hover:opacity-80 transition-opacity"
+                          src={p.movie_poster_url}
+                          alt={p.movie_title}
+                          className="h-16 w-12 shrink-0 rounded-lg object-cover ring-1 ring-white/10 transition group-hover:ring-gold-400/60"
                         />
                       ) : (
-                        <div className="w-12 h-16 bg-white/10 dark:bg-gray-700/50 rounded-lg flex items-center justify-center text-gray-400 dark:text-gray-500">
-                          🎬
+                        <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg bg-ink-700 text-gray-500">
+                          <Film size={16} />
                         </div>
                       )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 text-sm line-clamp-2">
-                          {authorPost.movie_title}
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm font-medium text-gray-100 transition group-hover:text-gold-300">
+                          {p.movie_title}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatShortDate(authorPost.published_at)}
-                        </p>
+                        <p className="mt-0.5 text-xs text-gray-500">{formatShortDate(p.published_at)}</p>
                       </div>
+                      <ChevronRight size={16} className="shrink-0 text-gray-600 transition group-hover:translate-x-0.5 group-hover:text-gold-400" />
                     </Link>
                   ))}
                 </div>
               </div>
             )}
-
-            {/* Related Posts */}
-            <RelatedPostsClient 
-              currentPostId={postId}
-              currentMovieTitle={post.movie_title}
-              genreTags={post.genre_tags || []}
-              cast={post.cast || []}
-              director={post.director}
-              releaseYear={post.release_date ? new Date(post.release_date).getFullYear() : undefined}
-            />
-          </div>
+          </aside>
         </div>
       </main>
 
-      {/* Footer - Glass style */}
-      <footer className="backdrop-blur-xl bg-gray-900/80 text-white py-12 mt-12 border-t border-white/20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <h3 className="text-2xl font-bold mb-4">MovieBlogger</h3>
-              <p className="text-gray-300 max-w-md">
-                Your ultimate guide to the world of cinema. Reviews, news, and more.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mb-4">Quick Links</h4>
-              <ul className="space-y-3 text-gray-300">
-                <li>
-                  <Link href="/reviews" className="hover:text-white transition-colors">
-                    Reviews
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/news" className="hover:text-white transition-colors">
-                    News
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors">
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-white transition-colors">
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mb-4">Join our newsletter</h4>
-              <p className="text-gray-300 mb-4 text-sm">
-                Get the latest movie news and reviews delivered to your inbox.
-              </p>
-              <div className="flex flex-col space-y-3">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email"
-                  className="px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-black dark:bg-gray-700 dark:text-white backdrop-blur-sm"
-                />
-                <button className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium">
-                  Subscribe
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t border-white/20 mt-12 pt-8 text-center text-gray-400 text-sm">
-            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
-            <p className="mt-2">Movie data from TMDB. All trademarks belong to their respective owners.</p>
-          </div>
-        </div>
-      </footer>
-
-      {/* Author Profile Modal */}
       {isProfileModalOpen && authorProfile && (
         <AuthorProfileModal
           userId={authorProfile.id}
@@ -1077,15 +796,6 @@ export default function PostPage({ params }: PostPageProps) {
           currentUserId={currentUser?.id}
         />
       )}
-
-      {/* Full Review Popup */}
-      <FullReviewPopup
-        isOpen={isFullReviewOpen}
-        onClose={() => setIsFullReviewOpen(false)}
-        title={post.movie_title}
-        content={post.content}
-        movieTitle={post.movie_title}
-      />
     </div>
   )
 }

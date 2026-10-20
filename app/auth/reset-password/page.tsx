@@ -1,13 +1,11 @@
-//app/auth/reset-password/page.tsx
-
-
-
 'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import AuthShell from '@/components/AuthShell'
+import { Lock, Eye, EyeOff, Check, AlertCircle, ArrowLeft } from 'lucide-react'
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
@@ -16,6 +14,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [showPw, setShowPw] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -103,40 +102,52 @@ export default function ResetPasswordPage() {
     }
   }
 
+  const iconCls = 'pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500'
+  const blocked = !!error?.includes('not available')
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50 dark:bg-gray-900">
-      <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-          {userEmail ? `Reset Password for ${userEmail}` : 'Reset Your Password'}
-        </h1>
-        
-        <form onSubmit={handleResetPassword} className="space-y-4">
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              New Password
-            </label>
+    <AuthShell
+      title="Reset your password"
+      subtitle={userEmail ? `Choose a new password for ${userEmail}` : 'Choose a new password for your account.'}
+      eyebrow="Account security"
+      headline={<>A fresh start, <span className="text-gold-400">one password away.</span></>}
+    >
+      <form onSubmit={handleResetPassword} className="space-y-4">
+        <div>
+          <label htmlFor="password" className="mb-label">New Password</label>
+          <div className="relative">
+            <Lock className={iconCls} />
             <input
               id="password"
-              type="password"
+              type={showPw ? 'text' : 'password'}
               placeholder="Enter new password (min. 6 characters)"
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="mb-input !pl-11 !pr-11"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
               disabled={loading}
             />
+            <button
+              type="button"
+              onClick={() => setShowPw(!showPw)}
+              aria-label={showPw ? 'Hide password' : 'Show password'}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-white"
+            >
+              {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
-          
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Confirm New Password
-            </label>
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="mb-label">Confirm New Password</label>
+          <div className="relative">
+            <Lock className={iconCls} />
             <input
               id="confirmPassword"
-              type="password"
+              type={showPw ? 'text' : 'password'}
               placeholder="Confirm new password"
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="mb-input !pl-11"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -144,34 +155,31 @@ export default function ResetPasswordPage() {
               disabled={loading}
             />
           </div>
-
-          {error && (
-            <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-red-600 dark:text-red-400 text-sm text-center">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <p className="text-green-600 dark:text-green-400 text-sm text-center">{success}</p>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || !!error?.includes('not available')}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Updating...' : 'Update Password'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link href="/login" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
-            Back to Login
-          </Link>
         </div>
+
+        {error && (
+          <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-crimson-500/30 bg-crimson-500/10 p-3.5 text-sm text-red-300">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <p>{error}</p>
+          </div>
+        )}
+        {success && (
+          <div role="status" className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-sm text-emerald-300">
+            <Check size={16} className="mt-0.5 shrink-0" />
+            <p>{success}</p>
+          </div>
+        )}
+
+        <button type="submit" disabled={loading || blocked} className="mb-btn-primary w-full !py-3">
+          {loading ? 'Updating...' : 'Update Password'}
+        </button>
+      </form>
+
+      <div className="mt-8 text-center">
+        <Link href="/login" className="inline-flex items-center gap-2 text-sm font-medium text-gold-400 transition hover:text-gold-300">
+          <ArrowLeft size={15} /> Back to Login
+        </Link>
       </div>
-    </div>
+    </AuthShell>
   )
 }

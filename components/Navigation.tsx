@@ -39,7 +39,7 @@ export async function Navigation() {
         {/* Right Corner - Profile/Auth */}
         <div className="flex items-center space-x-4">
           {user ? (
-            <ClientProfileDropdown user={user} />
+            <ClientProfileDropdown user={user} profile={null} />
           ) : (
             <div className="flex space-x-3">
               <Link href="/login" className="text-gray-600 hover:text-black dark:text-gray-300 dark:hover:text-white text-sm">

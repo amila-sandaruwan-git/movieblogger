@@ -1,4 +1,3 @@
-// lib/supabase/server.ts - WITH BOTH EXPORTS
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -14,23 +13,14 @@ export async function createClient() {
           return cookieStore.get(name)?.value
         },
         set(name: string, value: string, options: any) {
-          try {
-            cookieStore.set({ name, value, ...options })
-          } catch (error) {
-            // The `set` method was called from a Server Component
-          }
+          try { cookieStore.set({ name, value, ...options }) } catch {}
         },
         remove(name: string, options: any) {
-          try {
-            cookieStore.set({ name, value: '', ...options })
-          } catch (error) {
-            // The `remove` method was called from a Server Component
-          }
+          try { cookieStore.set({ name, value: '', ...options }) } catch {}
         },
       },
     }
   )
 }
 
-// Export as createServerClient for compatibility
 export { createClient as createServerClient }

@@ -1,4 +1,3 @@
-// app/about/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -199,425 +198,223 @@ export default function AboutPage() {
     }
   }
 
+  const statCards = [
+    { label: 'Movie Reviews', value: stats.totalReviews },
+    { label: 'Community Members', value: stats.totalUsers },
+    { label: 'Film Genres', value: stats.totalGenres },
+    { label: 'Unique Movies', value: stats.totalMovies },
+  ]
+
+  const missionPoints = [
+    'Democratize film criticism by giving everyone a voice',
+    'Connect passionate movie enthusiasts from around the globe',
+    'Preserve diverse perspectives on cinema for future generations',
+  ]
+
+  const active = teamMembers[activeTeamMember]
+
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-        
-      </nav>
+    <div className="min-h-screen bg-ink-950 text-white">
+      {/* ================= HERO ================= */}
+      <header className="relative isolate overflow-hidden border-b border-white/10">
+        <img src="/browse.jpg" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover opacity-60" />
+        <div className="mb-vignette absolute inset-0 -z-10" />
+        <div className="mb-container animate-fade-up py-24 text-center sm:py-32">
+          <p className="mb-eyebrow mb-5 inline-flex items-center gap-2">
+            <Sparkles size={14} /> Since 2023
+          </p>
+          <h1 className="mb-display mx-auto max-w-4xl text-5xl font-semibold leading-[1.05] sm:text-7xl">
+            About <span className="text-gold-400">MovieBlogger</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
+            Where movie lovers unite to share, discover, and celebrate the magic of cinema.
+          </p>
+        </div>
+      </header>
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20" />
-        
-        <div className="container mx-auto px-4 py-20 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center justify-center gap-3 mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-linear-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <Film className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white">
-                About <span className="text-blue-600 dark:text-blue-400">MovieBlogger</span>
-              </h1>
-            </div>
-            
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-8 leading-relaxed">
-              Where movie lovers unite to share, discover, and celebrate the magic of cinema.
+      {/* ================= MISSION ================= */}
+      <section className="mb-container py-20">
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div>
+            <p className="mb-eyebrow mb-3 inline-flex items-center gap-2"><Target size={14} /> Our mission</p>
+            <h2 className="mb-section-title !text-3xl sm:!text-4xl">A stage for every film lover&apos;s voice.</h2>
+            <p className="mt-5 text-lg leading-relaxed text-gray-400">
+              At MovieBlogger, we&apos;re on a mission to create the most vibrant and authentic community for movie lovers worldwide.
+              We believe that every film deserves thoughtful discussion and every moviegoer deserves a platform to share their voice.
             </p>
-            
-            <div className="inline-flex items-center space-x-4 text-lg text-gray-500 dark:text-gray-400">
-              <span className="flex items-center">
-                <Sparkles className="w-5 h-5 mr-2 text-yellow-500" />
-                Since 2023
-              </span>
-              <span>•</span>
-              <span>Made with ❤️ for film enthusiasts</span>
-            </div>
+            <ul className="mt-8 space-y-4">
+              {missionPoints.map(p => (
+                <li key={p} className="flex items-start gap-3 text-gray-300">
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-400/20 text-gold-400">
+                    <CheckCircle size={14} />
+                  </span>
+                  {p}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {statCards.map((s, i) => (
+              <div
+                key={s.label}
+                className={`rounded-2xl border border-white/10 bg-ink-800/60 p-6 transition hover:-translate-y-1 hover:border-gold-400/40 ${i % 2 === 1 ? 'sm:translate-y-6 hover:sm:translate-y-5' : ''}`}
+              >
+                <div className="mb-display text-4xl font-semibold text-gold-400">{s.value.toLocaleString()}+</div>
+                <div className="mt-1 text-sm text-gray-400">{s.label}</div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Our Mission */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-linear-to-r from-green-500 to-emerald-600 flex items-center justify-center">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Our Mission</h2>
-              </div>
-              
-              <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                At MovieBlogger, we're on a mission to create the most vibrant and authentic community for movie lovers worldwide. 
-                We believe that every film deserves thoughtful discussion and every moviegoer deserves a platform to share their voice.
-              </p>
-              
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-1 shrink-0" />
-                  <p className="text-gray-700 dark:text-gray-300">
-                    Democratize film criticism by giving everyone a voice
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-1 shrink-0" />
-                  <p className="text-gray-700 dark:text-gray-300">
-                    Connect passionate movie enthusiasts from around the globe
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 mt-1 shrink-0" />
-                  <p className="text-gray-700 dark:text-gray-300">
-                    Preserve diverse perspectives on cinema for future generations
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="relative">
-              <div className="bg-linear-to-br from-blue-500/10 to-purple-500/10 dark:from-blue-900/20 dark:to-purple-900/20 rounded-2xl p-8">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                      {stats.totalReviews.toLocaleString()}+
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400">Movie Reviews</div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                      {stats.totalUsers.toLocaleString()}+
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400">Community Members</div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-2">
-                      {stats.totalGenres.toLocaleString()}+
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400">Film Genres</div>
-                  </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
-                    <div className="text-3xl font-bold text-pink-600 dark:text-pink-400 mb-2">
-                      {stats.totalMovies.toLocaleString()}+
-                    </div>
-                    <div className="text-gray-600 dark:text-gray-400">Unique Movies</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      {/* ================= VALUES ================= */}
+      <section className="border-y border-white/10 bg-ink-900/60 py-20">
+        <div className="mb-container">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <p className="mb-eyebrow mb-3">What we stand for</p>
+            <h2 className="mb-section-title">Our Core Values</h2>
+            <p className="mt-3 text-gray-400">The principles that guide everything we do at MovieBlogger</p>
           </div>
-        </div>
-      </div>
-
-      {/* Our Values */}
-      <div className="bg-gray-50 dark:bg-gray-800/50 py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Our Core Values
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              The principles that guide everything we do at MovieBlogger
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {values.map((value, index) => (
-              <div 
-                key={index}
-                className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className={`w-14 h-14 rounded-xl bg-linear-to-br ${value.color} flex items-center justify-center mb-4`}>
-                  <div className="text-white">
-                    {value.icon}
-                  </div>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                  {value.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {value.description}
-                </p>
+              <div key={index} className="mb-card !h-auto p-6">
+                <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gold-400/10 text-gold-400 ring-1 ring-gold-400/20">
+                  {value.icon}
+                </span>
+                <h3 className="mb-display mb-2 text-lg font-semibold text-white">{value.title}</h3>
+                <p className="text-sm leading-relaxed text-gray-400">{value.description}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Features */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Why Choose MovieBlogger?
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Experience cinema discussion like never before
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {features.map((feature, index) => (
-              <div 
-                key={index}
-                className="flex items-start gap-4 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="w-12 h-12 rounded-lg bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 flex items-center justify-center shrink-0">
-                  <div className="text-blue-600 dark:text-blue-400">
-                    {feature.icon}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {feature.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* ================= FEATURES ================= */}
+      <section className="mb-container py-20">
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <p className="mb-eyebrow mb-3">The experience</p>
+          <h2 className="mb-section-title">Why Choose MovieBlogger?</h2>
+          <p className="mt-3 text-gray-400">Experience cinema discussion like never before</p>
         </div>
-      </div>
-
-      {/* Team Section */}
-      <div className="bg-linear-to-br from-gray-900 to-black text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-linear-to-r from-yellow-500 to-orange-500 flex items-center justify-center">
-                <Users className="w-6 h-6 text-white" />
+        <div className="grid gap-5 md:grid-cols-2">
+          {features.map((feature, index) => (
+            <div key={index} className="flex items-start gap-4 rounded-2xl border border-white/10 bg-ink-800/50 p-6 transition hover:border-gold-400/30">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold-400/10 text-gold-400">
+                {feature.icon}
+              </span>
+              <div>
+                <h3 className="mb-display text-lg font-semibold text-white">{feature.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-gray-400">{feature.description}</p>
               </div>
-              <h2 className="text-3xl font-bold">Meet Our Team</h2>
             </div>
-            <p className="text-gray-300 max-w-2xl mx-auto">
-              A passionate group of film enthusiasts and tech innovators
-            </p>
+          ))}
+        </div>
+      </section>
+
+      {/* ================= TEAM ================= */}
+      <section className="border-t border-white/10 bg-ink-900/60 py-20">
+        <div className="mb-container">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <p className="mb-eyebrow mb-3 inline-flex items-center gap-2"><Users size={14} /> The crew</p>
+            <h2 className="mb-section-title">Meet Our Team</h2>
+            <p className="mt-3 text-gray-400">A passionate group of film enthusiasts and tech innovators</p>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto mb-12">
+
+          <div className="mb-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {teamMembers.map((member, index) => (
-              <div 
+              <button
                 key={member.id}
-                className={`bg-gray-800 rounded-xl p-6 shadow-lg transition-all duration-300 cursor-pointer ${
-                  activeTeamMember === index 
-                    ? 'ring-2 ring-yellow-500 transform -translate-y-1' 
-                    : 'hover:bg-gray-700'
-                }`}
+                type="button"
                 onClick={() => setActiveTeamMember(index)}
                 onMouseEnter={() => setActiveTeamMember(index)}
+                aria-pressed={activeTeamMember === index}
+                className={`rounded-2xl border p-6 text-left transition-all duration-300 ${
+                  activeTeamMember === index
+                    ? '-translate-y-1 border-gold-400/60 bg-ink-800 shadow-[0_18px_40px_-18px_rgba(245,196,81,0.3)]'
+                    : 'border-white/10 bg-ink-800/50 hover:border-white/20'
+                }`}
               >
-                <div className="flex items-center gap-4 mb-4">
-                  <img 
-                    src={member.avatar} 
-                    alt={member.name}
-                    className="w-16 h-16 rounded-full border-2 border-yellow-500"
-                  />
-                  <div>
-                    <h3 className="font-bold text-lg">{member.name}</h3>
-                    <p className="text-yellow-400 text-sm">{member.role}</p>
+                <div className="mb-4 flex items-center gap-4">
+                  <img src={member.avatar} alt={member.name} className="h-14 w-14 rounded-full border-2 border-gold-400/70 bg-ink-700" />
+                  <div className="min-w-0">
+                    <h3 className="mb-display truncate font-semibold text-white">{member.name}</h3>
+                    <p className="text-xs text-gold-400">{member.role}</p>
                   </div>
                 </div>
-                <p className="text-gray-300 text-sm mb-4">{member.bio}</p>
-                
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-gray-400 text-xs mb-1">Skills</div>
-                    <div className="flex flex-wrap gap-1">
-                      {member.skills.map((skill, idx) => (
-                        <span 
-                          key={idx}
-                          className="px-2 py-1 bg-gray-700 rounded text-xs"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="text-gray-400 text-xs mb-1">Favorite Genres</div>
-                    <div className="flex flex-wrap gap-1">
-                      {member.favoriteGenres.map((genre, idx) => (
-                        <span 
-                          key={idx}
-                          className="px-2 py-1 bg-yellow-500/20 rounded text-xs"
-                        >
-                          {genre}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                <p className="mb-4 line-clamp-3 text-sm text-gray-400">{member.bio}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {member.skills.map((skill, idx) => (
+                    <span key={idx} className="rounded-md bg-white/5 px-2 py-1 text-[11px] text-gray-300">{skill}</span>
+                  ))}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
-          
-          {/* Active Team Member Details */}
-          <div className="max-w-4xl mx-auto bg-gray-800 rounded-xl p-8">
-            <div className="flex items-center gap-6">
-              <img 
-                src={teamMembers[activeTeamMember].avatar} 
-                alt={teamMembers[activeTeamMember].name}
-                className="w-20 h-20 rounded-full border-2 border-yellow-500"
-              />
+
+          {/* Active member spotlight */}
+          <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-ink-800/70 p-6 sm:p-10">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <img src={active.avatar} alt={active.name} className="h-24 w-24 rounded-full border-2 border-gold-400 bg-ink-700" />
               <div>
-                <h3 className="text-2xl font-bold">{teamMembers[activeTeamMember].name}</h3>
-                <p className="text-yellow-400 text-lg">{teamMembers[activeTeamMember].role}</p>
+                <h3 className="mb-display text-3xl font-semibold">{active.name}</h3>
+                <p className="text-lg text-gold-400">{active.role}</p>
               </div>
             </div>
+            <p className="mt-6 text-lg leading-relaxed text-gray-300">{active.bio}</p>
+
             <div className="mt-6">
-              <p className="text-gray-300 text-lg leading-relaxed">
-                {teamMembers[activeTeamMember].bio}
-              </p>
-              <div className="mt-6 flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                  <Eye className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-400">Currently watching:</span>
-                  <span className="text-yellow-400">5+ films/week</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-400">Movie buff for:</span>
-                  <span className="text-yellow-400">15+ years</span>
-                </div>
+              <p className="mb-2 text-xs uppercase tracking-widest text-gray-500">Favorite genres</p>
+              <div className="flex flex-wrap gap-2">
+                {active.favoriteGenres.map((genre, idx) => (
+                  <span key={idx} className="mb-chip">{genre}</span>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Join Community CTA */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="bg-linear-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 dark:from-blue-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-2xl p-12">
-            <div className="inline-flex items-center justify-center gap-3 mb-6">
-              <div className="w-16 h-16 rounded-full bg-linear-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-white" />
+            <div className="mt-6 flex flex-wrap gap-x-8 gap-y-2 border-t border-white/10 pt-6 text-sm">
+              <div className="flex items-center gap-2">
+                <Eye className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-500">Currently watching:</span>
+                <span className="font-medium text-gold-400">5+ films/week</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-gray-500" />
+                <span className="text-gray-500">Movie buff for:</span>
+                <span className="font-medium text-gold-400">15+ years</span>
               </div>
             </div>
-            
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Ready to Join Our Community?
-            </h2>
-            
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Share your movie insights, discover hidden gems, and connect with fellow cinephiles from around the world.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              {user ? (
-                <>
-                  <Link 
-                    href="/dashboard"
-                    className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-medium text-lg inline-flex items-center justify-center gap-2"
-                  >
-                    <span>Write a Review</span>
-                    <span>→</span>
-                  </Link>
-                  <Link 
-                    href="/reviews"
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-700 px-8 py-4 rounded-xl hover:shadow-xl transition-all duration-300 font-medium text-lg"
-                  >
-                    Explore Reviews
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link 
-                    href="/signup"
-                    className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 font-medium text-lg inline-flex items-center justify-center gap-2"
-                  >
-                    <span>Join Free</span>
-                    <span>→</span>
-                  </Link>
-                  <Link 
-                    href="/reviews"
-                    className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border-2 border-gray-300 dark:border-gray-700 px-8 py-4 rounded-xl hover:shadow-xl transition-all duration-300 font-medium text-lg"
-                  >
-                    Browse Reviews
-                  </Link>
-                </>
-              )}
-            </div>
-            
-            <p className="text-gray-500 dark:text-gray-400 mt-6 text-sm">
-              No credit card required • Join thousands of movie lovers
-            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Footer */}
-      <footer className="bg-linear-to-br from-gray-900 to-black text-white py-16 dark:from-gray-800 dark:to-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-2">
-              <div className="flex items-center space-x-2 mb-4">
-                <Film className="w-6 h-6 text-blue-400" />
-                <span className="text-2xl font-bold">MovieBlogger</span>
-              </div>
-              <p className="text-gray-400 max-w-md">
-                Your ultimate guide to the world of cinema. Discover reviews, news, and hidden gems from passionate movie lovers.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Quick Links
-              </h4>
-              <ul className="space-y-3 text-gray-400">
-                <li>
-                  <Link href="/reviews" className="hover:text-white transition-colors flex items-center gap-2 group">
-                    <span className="w-0 h-0 rounded-full bg-blue-500 group-hover:w-2 group-hover:h-2 transition-all" />
-                    Reviews
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors flex items-center gap-2 group">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    About Us
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-white transition-colors flex items-center gap-2 group">
-                    <span className="w-0 h-0 rounded-full bg-blue-500 group-hover:w-2 group-hover:h-2 transition-all" />
-                    Contact
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Stay Updated
-              </h4>
-              <p className="text-gray-400 mb-4 text-sm">
-                Get the latest movie news and reviews delivered to your inbox.
-              </p>
-              <div className="flex flex-col space-y-3">
-                <input 
-                  type="email" 
-                  placeholder="Enter your email"
-                  className="px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                />
-                <button className="bg-linear-to-r from-blue-500 to-purple-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-medium">
-                  Subscribe
-                </button>
-              </div>
-            </div>
+      {/* ================= CTA ================= */}
+      <section className="mb-container py-20">
+        <div className="relative overflow-hidden rounded-3xl border border-gold-400/30 bg-gradient-to-br from-gold-500/15 via-ink-800 to-ink-900 p-10 text-center sm:p-16">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gold-400/20 blur-3xl" />
+          <span className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-ink-950">
+            <Sparkles size={26} />
+          </span>
+          <h2 className="mb-display text-3xl font-semibold sm:text-4xl">Ready to Join Our Community?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-300">
+            Share your movie insights, discover hidden gems, and connect with fellow cinephiles from around the world.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            {user ? (
+              <>
+                <Link href="/dashboard" className="mb-btn-primary !px-8 !py-3.5 !text-base">Write a Review <span>→</span></Link>
+                <Link href="/reviews" className="mb-btn-ghost !px-8 !py-3.5 !text-base">Explore Reviews</Link>
+              </>
+            ) : (
+              <>
+                <Link href="/signup" className="mb-btn-primary !px-8 !py-3.5 !text-base">Join Free <span>→</span></Link>
+                <Link href="/reviews" className="mb-btn-ghost !px-8 !py-3.5 !text-base">Browse Reviews</Link>
+              </>
+            )}
           </div>
-          
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>© {new Date().getFullYear()} MovieBlogger. All rights reserved.</p>
-            <p className="text-sm mt-2">Made with ❤️ for the love of cinema</p>
-          </div>
+          <p className="mt-6 text-sm text-gray-500">No credit card required • Join thousands of movie lovers</p>
         </div>
-      </footer>
+      </section>
     </div>
   )
 }
