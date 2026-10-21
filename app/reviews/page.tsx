@@ -45,11 +45,11 @@ export default async function ReviewsPage({ searchParams }: Props) {
     <div className="min-h-screen bg-ink-950 text-white">
       <header className="relative isolate overflow-hidden border-b border-white/10">
         <div className="mb-vignette absolute inset-0 -z-10" />
-        <div className="mb-container py-14 sm:py-20">
+        <div className="mb-container py-10 sm:py-14">
           <p className="mb-eyebrow mb-4 inline-flex items-center gap-2">
             <Clapperboard size={14} /> The archive
           </p>
-          <h1 className="mb-display text-4xl font-semibold leading-tight sm:text-6xl">
+          <h1 className="mb-display text-4xl font-semibold leading-tight sm:text-5xl">
             Movie <span className="text-gold-400">Reviews</span>
             {activeGenre && (
               <span className="ml-3 inline-block rounded-full border border-gold-400/40 bg-gold-400/10 px-4 py-1 align-middle text-base font-medium text-gold-300 sm:text-lg">
@@ -57,7 +57,7 @@ export default async function ReviewsPage({ searchParams }: Props) {
               </span>
             )}
           </h1>
-          <p className="mt-4 max-w-2xl text-base text-gray-400 sm:text-lg">
+          <p className="mt-3 max-w-2xl text-base text-gray-400">
             Browse all published movie reviews from our community.
           </p>
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-500">
@@ -68,7 +68,7 @@ export default async function ReviewsPage({ searchParams }: Props) {
         </div>
       </header>
 
-      <div className="mb-container py-10">
+      <div className="mb-container py-8">
         <ReviewsClient
           initialPosts={allPosts}
           initialUserProfiles={profilesMap}

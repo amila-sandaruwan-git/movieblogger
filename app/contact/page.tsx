@@ -1,8 +1,11 @@
+// app/contact/page.tsx
+
 'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import emailjs from '@emailjs/browser'
 import { 
   Mail, 
   MessageSquare, 
@@ -46,7 +49,8 @@ export default function ContactPage() {
 
   const fetchUserData = async () => {
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const currentUser = session?.user
       setUser(currentUser)
 
       if (currentUser) {
@@ -100,8 +104,8 @@ export default function ContactPage() {
     setSubmitMessage('')
 
     try {
-      // Send message to admin panel (store in Supabase)
-      const { error } = await supabase
+      // 1. Save to database
+      const { error: dbError } = await supabase
         .from('contact_messages')
         .insert([{
           name: formData.name,
@@ -113,13 +117,23 @@ export default function ContactPage() {
           created_at: new Date().toISOString()
         }])
 
-      if (error) throw error
+      if (dbError) throw dbError
 
-      // Send email notification (you can integrate with a real email service here)
-      // For now, we'll just log it
-      console.log('Contact message sent:', formData)
+      // 2. Send the email via EmailJS
+      const serviceID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!
+      const templateID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!
+      const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
 
-      // Show success message
+      const templateParams = {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      }
+
+      await emailjs.send(serviceID, templateID, templateParams, publicKey)
+
+      // 3. Show success message
       setSubmitStatus('success')
       setSubmitMessage('Thank you! Your message has been sent successfully. We\'ll get back to you soon.')
 
@@ -131,7 +145,6 @@ export default function ContactPage() {
         message: ''
       })
 
-      // Clear success message after 5 seconds
       setTimeout(() => {
         setSubmitStatus('idle')
         setSubmitMessage('')
@@ -140,9 +153,8 @@ export default function ContactPage() {
     } catch (error: any) {
       console.error('Error submitting contact form:', error)
       setSubmitStatus('error')
-      setSubmitMessage(error.message || 'Something went wrong. Please try again.')
+      setSubmitMessage(error.text || error.message || 'Something went wrong. Please try again.')
       
-      // Clear error message after 5 seconds
       setTimeout(() => {
         setSubmitStatus('idle')
         setSubmitMessage('')
@@ -156,13 +168,13 @@ export default function ContactPage() {
     {
       icon: <Mail className="w-5 h-5" />,
       title: "Email",
-      details: ["support@movieblogger.com", "feedback@movieblogger.com"],
+      details: ["worldcinema978@gmail.com"],
       description: "We typically respond within 24 hours"
     },
     {
       icon: <Phone className="w-5 h-5" />,
       title: "Phone",
-      details: ["+94 72 000-0000", "+94 70 000-6543"],
+      details: ["+94 76 227-4677"],
       description: "Monday to Friday, 9AM - 6PM EST"
     },
     {
@@ -362,13 +374,19 @@ export default function ContactPage() {
             </div>
 
             <div className="lg:col-span-2">
-              {/* Placeholder for Google Maps or any map component */}
-              <div className="flex h-64 items-center justify-center rounded-2xl border border-dashed border-white/15 bg-ink-800/60 md:h-80">
-                <div className="text-center">
-                  <MapPin className="mx-auto mb-3 h-10 w-10 text-gray-600" />
-                  <p className="font-medium text-gray-400">Interactive Map Location</p>
-                  <p className="mt-1 text-xs text-gray-600">(You can integrate Google Maps API here)</p>
-                </div>
+              {/* Real Google Maps Embed */}
+              <div className="h-64 overflow-hidden rounded-2xl border border-white/10 bg-ink-800/60 md:h-80">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7935.374347571157!2d80.38904345!3d6.03759505!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae16bb6f62b793f%3A0xbc7261aec22a974!2sImaduwa!5e0!3m2!1sen!2slk!4v1792562509046!5m2!1sen!2slk"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  title="MovieBlogger HQ Location"
+                  className="opacity-90 transition-opacity hover:opacity-100"
+                ></iframe>
               </div>
             </div>
           </div>
