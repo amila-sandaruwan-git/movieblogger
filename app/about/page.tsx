@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { 
-  Film, 
   Users, 
-  Award, 
   Heart, 
   Globe, 
   Star, 
@@ -21,14 +19,8 @@ import {
   Eye
 } from 'lucide-react'
 
-interface PostStats {
-  genre_tags: any[]
-  movie_title?: string
-}
-
 export default function AboutPage() {
   const [user, setUser] = useState<any>(null)
-  const [userWithProfile, setUserWithProfile] = useState<any>(null)
   const [activeTeamMember, setActiveTeamMember] = useState(0)
   const [stats, setStats] = useState({
     totalReviews: 0,
@@ -42,37 +34,37 @@ export default function AboutPage() {
   const teamMembers = [
     {
       id: 1,
-      name: "Alex Morgan",
+      name: "W.K.A Sandaruwan",
       role: "Founder & Lead Developer",
       bio: "Passionate cinephile with 10+ years in software engineering. Believes every movie has a story worth telling.",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex",
+      avatar: "/team/sandaruwan.jpg", 
       skills: ["React", "Next.js", "Cinematography"],
       favoriteGenres: ["Sci-Fi", "Thriller", "Documentary"]
     },
     {
       id: 2,
-      name: "Samira Patel",
+      name: "Sandaruwan",
       role: "Head of Content",
       bio: "Film critic and journalist with a background in film studies. Curates our featured reviews and editorials.",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Samira",
+      avatar: "/team/sandaruwan2.jpg", 
       skills: ["Film Criticism", "Content Strategy", "Community Building"],
       favoriteGenres: ["Drama", "Animation", "Foreign Films"]
     },
     {
       id: 3,
-      name: "Marcus Chen",
+      name: "Amila",
       role: "UI/UX Designer",
       bio: "Creates beautiful, intuitive interfaces that make discovering movies a delightful experience.",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus",
+      avatar: "/team/amila.jpg", 
       skills: ["Figma", "Motion Design", "User Research"],
       favoriteGenres: ["Action", "Fantasy", "Film Noir"]
     },
     {
       id: 4,
-      name: "Elena Rossi",
+      name: "Amila Sandaruwan",
       role: "Community Manager",
       bio: "Builds and nurtures our growing community of movie enthusiasts from around the world.",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena",
+      avatar: "/team/amila2.jpg", 
       skills: ["Community Engagement", "Social Media", "Event Planning"],
       favoriteGenres: ["Romance", "Comedy", "Musical"]
     }
@@ -135,32 +127,11 @@ export default function AboutPage() {
   const fetchData = async () => {
     try {
       // Get current user
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const currentUser = session?.user
       setUser(currentUser)
 
-      if (currentUser) {
-        // Fetch profile for current user
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('name, avatar_url')
-          .eq('id', currentUser.id)
-          .single()
-
-        const name = profile?.name || currentUser.user_metadata?.name || currentUser.email?.split('@')[0] || 'User'
-        const avatar = profile?.avatar_url || currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture || null
-
-        setUserWithProfile({
-          ...currentUser,
-          id: currentUser.id,
-          user_metadata: {
-            ...currentUser.user_metadata,
-            name,
-            avatar_url: avatar
-          }
-        })
-      }
-
-      // Fetch stats - Fixed: Include movie_title in the select
+      // Fetch stats
       const { data: postsData } = await supabase
         .from('posts')
         .select('genre_tags, movie_title')
@@ -168,7 +139,7 @@ export default function AboutPage() {
         .eq('visibility', 'public')
 
       const { data: profilesData } = await supabase
-        .from('user_public_profiles')
+        .from('profiles')
         .select('id')
 
       if (postsData) {
@@ -336,7 +307,11 @@ export default function AboutPage() {
                 }`}
               >
                 <div className="mb-4 flex items-center gap-4">
-                  <img src={member.avatar} alt={member.name} className="h-14 w-14 rounded-full border-2 border-gold-400/70 bg-ink-700" />
+                  <img 
+                    src={member.avatar} 
+                    alt={member.name} 
+                    className="h-14 w-14 rounded-full border-2 border-gold-400/70 bg-ink-700 object-cover" 
+                  />
                   <div className="min-w-0">
                     <h3 className="mb-display truncate font-semibold text-white">{member.name}</h3>
                     <p className="text-xs text-gold-400">{member.role}</p>
@@ -355,7 +330,11 @@ export default function AboutPage() {
           {/* Active member spotlight */}
           <div className="mx-auto max-w-4xl rounded-3xl border border-white/10 bg-ink-800/70 p-6 sm:p-10">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-              <img src={active.avatar} alt={active.name} className="h-24 w-24 rounded-full border-2 border-gold-400 bg-ink-700" />
+              <img 
+                src={active.avatar} 
+                alt={active.name} 
+                className="h-24 w-24 rounded-full border-2 border-gold-400 bg-ink-700 object-cover" 
+              />
               <div>
                 <h3 className="mb-display text-3xl font-semibold">{active.name}</h3>
                 <p className="text-lg text-gold-400">{active.role}</p>
@@ -392,9 +371,7 @@ export default function AboutPage() {
       <section className="mb-container py-20">
         <div className="relative overflow-hidden rounded-3xl border border-gold-400/30 bg-gradient-to-br from-gold-500/15 via-ink-800 to-ink-900 p-10 text-center sm:p-16">
           <div className="pointer-events-none absolute -right-10 -top-10 h-48 w-48 rounded-full bg-gold-400/20 blur-3xl" />
-          <span className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-gold-400 text-ink-950">
-            <Sparkles size={26} />
-          </span>
+         
           <h2 className="mb-display text-3xl font-semibold sm:text-4xl">Ready to Join Our Community?</h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-300">
             Share your movie insights, discover hidden gems, and connect with fellow cinephiles from around the world.
