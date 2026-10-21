@@ -1,17 +1,20 @@
 'use client'
 
 import { Editor } from '@tinymce/tinymce-react'
+import { useEffect, useState } from 'react'
+
+// 1. Import the core tinymce module
 import tinymce from 'tinymce/tinymce'
 
-// Core TinyMCE
+// 2. Import models and themes
 import 'tinymce/models/dom/model'
 import 'tinymce/themes/silver'
 import 'tinymce/icons/default'
 
-// Import the skin CSS directly (this is crucial for the blank box fix)
+// 3. Import the skin CSS (essential for styling)
 import 'tinymce/skins/ui/oxide/skin.min.css'
 
-// Plugins
+// 4. Import plugins
 import 'tinymce/plugins/advlist'
 import 'tinymce/plugins/autolink'
 import 'tinymce/plugins/lists'
@@ -36,6 +39,20 @@ export default function TinyMceEditor({ value, onChange, placeholder }: {
   onChange: (c: string) => void
   placeholder?: string
 }) {
+  const [isReady, setIsReady] = useState(false)
+
+  useEffect(() => {
+    // 5. Explicitly attach tinymce to the window object
+    if (typeof window !== 'undefined') {
+      (window as any).tinymce = tinymce
+      setIsReady(true)
+    }
+  }, [])
+
+  if (!isReady) {
+    return <div className="w-full h-[400px] border rounded-lg animate-pulse bg-gray-700" />
+  }
+
   return (
     <div className="border rounded-lg overflow-hidden dark:border-gray-600">
       <Editor
@@ -48,11 +65,11 @@ export default function TinyMceEditor({ value, onChange, placeholder }: {
           toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright | bullist numlist | link image media | emoticons',
           content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
           placeholder,
-          skin: 'oxide', // Tells TinyMCE to use the oxide skin we imported above
-          content_css: 'default', // Uses the default content styling
+          skin: 'oxide',
+          content_css: 'default',
           branding: false,
           promotion: false,
-          base_url: '/tinymce', // Points to the public folder for plugins
+          base_url: '/tinymce', // This must point to your public folder
           suffix: '.min',
         }}
       />
