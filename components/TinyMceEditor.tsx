@@ -1,12 +1,17 @@
 'use client'
 
 import { Editor } from '@tinymce/tinymce-react'
-import 'tinymce/tinymce'
-import 'tinymce/icons/default'
-import 'tinymce/themes/silver'
-import 'tinymce/models/dom'
+import tinymce from 'tinymce/tinymce'
 
-// Import the plugins you are using
+// Core TinyMCE
+import 'tinymce/models/dom/model'
+import 'tinymce/themes/silver'
+import 'tinymce/icons/default'
+
+// Import the skin CSS directly (this is crucial for the blank box fix)
+import 'tinymce/skins/ui/oxide/skin.min.css'
+
+// Plugins
 import 'tinymce/plugins/advlist'
 import 'tinymce/plugins/autolink'
 import 'tinymce/plugins/lists'
@@ -34,7 +39,6 @@ export default function TinyMceEditor({ value, onChange, placeholder }: {
   return (
     <div className="border rounded-lg overflow-hidden dark:border-gray-600">
       <Editor
-        // DO NOT pass an apiKey here to force self-hosting
         value={value}
         onEditorChange={onChange}
         init={{
@@ -44,12 +48,12 @@ export default function TinyMceEditor({ value, onChange, placeholder }: {
           toolbar: 'undo redo | blocks | bold italic forecolor | alignleft aligncenter alignright | bullist numlist | link image media | emoticons',
           content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
           placeholder,
-          skin: 'oxide-dark',
-          content_css: 'dark',
+          skin: 'oxide', // Tells TinyMCE to use the oxide skin we imported above
+          content_css: 'default', // Uses the default content styling
           branding: false,
           promotion: false,
-          // This tells TinyMCE to look for the skin and CSS locally
-          base_url: '/tinymce', 
+          base_url: '/tinymce', // Points to the public folder for plugins
+          suffix: '.min',
         }}
       />
     </div>
