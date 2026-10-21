@@ -21,7 +21,8 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "resend": "^6.34.1",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "tinymce": "^8.10.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.17.21",
