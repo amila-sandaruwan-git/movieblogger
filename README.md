@@ -7,8 +7,8 @@ MovieBlogger is a modern, community-driven movie review platform. It allows movi
 Our mission is to create the most vibrant and authentic community for movie lovers worldwide. We believe that every film deserves thoughtful discussion and every moviegoer deserves a platform to share their voice.
 
 ## Admin Logging
-Email: worldcinema978@gmail.com
-Pass: admin123
+- **Email:** worldcinema978@gmail.com
+- **Pass:** admin123
 
 ### Core Values
 - **Passion for Cinema:** We believe every movie has value and every opinion matters.
