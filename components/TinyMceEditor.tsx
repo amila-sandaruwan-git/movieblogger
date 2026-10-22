@@ -1,3 +1,5 @@
+// components/TinyMceEditor.tsx
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -45,6 +47,7 @@ export default function TinyMceEditor({ value, onChange, placeholder }: {
     <div className="border rounded-lg overflow-hidden dark:border-gray-600">
       <Editor
         tinymceScriptSrc="/tinymce/tinymce.min.js"
+        licenseKey="gpl" // <--- ADDED HERE
         value={value}
         onEditorChange={onChange}
         init={{
@@ -60,6 +63,7 @@ export default function TinyMceEditor({ value, onChange, placeholder }: {
           content_css: '/tinymce/skins/content/dark/content.min.css',
           branding: false,
           promotion: false,
+          // license_key: 'gpl', <--- REMOVED FROM HERE
         }}
       />
     </div>
